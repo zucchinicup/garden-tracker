@@ -16,18 +16,27 @@ const CSS = `
     background: linear-gradient(160deg, #E8F0E4 0%, #F5EFE6 50%, #EBE5D8 100%);
     min-height:100vh; color:#2D3B2D; -webkit-font-smoothing:antialiased;
   }
-  .shell      { display:flex; flex-direction:column; min-height:100vh; max-width:480px; margin:0 auto; position:relative; }
-  .screen     { flex:1; padding:0 0 90px; overflow-y:auto; }
-  .bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; background:rgba(255,255,255,.88); backdrop-filter:blur(16px); border-top:1px solid rgba(0,0,0,.06); display:flex; z-index:50; }
-  .nav-btn    { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 0 14px; background:none; border:none; cursor:pointer; font-family:inherit; transition:all .2s; }
-  .nav-icon   { font-size:22px; line-height:1; }
-  .nav-label  { font-size:10px; font-weight:700; letter-spacing:.05em; color:#8FAD8F; transition:color .2s; }
-  .nav-btn.active .nav-label { color:#3A7D5A; }
-  .nav-btn.active .nav-icon  { transform:translateY(-2px); }
-  .px { padding-left:22px; padding-right:22px; }
-  .hero       { padding:32px 22px 24px; text-align:center; }
+  /* ── Desktop shell ── */
+  .shell      { display:flex; min-height:100vh; }
+  .sidebar    { width:220px; flex-shrink:0; background:#1B3A2D; display:flex; flex-direction:column; padding:28px 0 24px; position:fixed; top:0; left:0; bottom:0; z-index:50; }
+  .sidebar-logo { padding:0 20px 24px; border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:12px; }
+  .screen     { flex:1; margin-left:220px; padding:32px 40px 60px; overflow-y:auto; }
+  .home-grid  { display:grid; grid-template-columns:300px 1fr; gap:32px; align-items:start; }
+  .two-col    { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .three-col  { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; }
+
+  /* ── Sidebar nav ── */
+  .nav-btn    { display:flex; align-items:center; gap:12px; padding:11px 20px; background:none; border:none; border-left:3px solid transparent; cursor:pointer; font-family:inherit; transition:all .18s; width:100%; text-align:left; }
+  .nav-btn:hover { background:rgba(255,255,255,.07); }
+  .nav-btn.active { background:rgba(255,255,255,.1); border-left-color:#7ED4A8; }
+  .nav-icon   { font-size:18px; line-height:1; flex-shrink:0; }
+  .nav-label  { font-size:13px; font-weight:700; letter-spacing:.03em; color:#9DC4AF; transition:color .18s; }
+  .nav-btn.active .nav-label { color:#7ED4A8; }
+  .nav-btn:hover .nav-label  { color:#C5DDD0; }
+  .px { padding-left:0; padding-right:0; }
+  .hero       { padding:0 0 24px; text-align:left; }
   .hero-date  { font-size:12px; color:#8FAD8F; letter-spacing:.08em; text-transform:uppercase; font-weight:700; margin-bottom:6px; }
-  .hero-title { font-size:26px; font-weight:700; color:#1E3A1E; line-height:1.2; }
+  .hero-title { font-size:28px; font-weight:700; color:#1E3A1E; line-height:1.2; }
   .orb-wrap   { display:flex; flex-direction:column; align-items:center; padding:8px 0 28px; }
   .orb-ring   { filter:drop-shadow(0 6px 20px rgba(58,125,90,.18)); }
   .orb-caption{ font-size:13px; color:#6B8F6B; margin-top:12px; font-weight:700; }
@@ -392,80 +401,84 @@ function HomeScreen({ plants, tasks, dispName, onToggle, onAddTask }) {
         <div className="hero-date">{dateStr}</div>
         <div className="hero-title">{greeting}, {dispName} 🌱</div>
       </div>
-      <div className="orb-wrap">
-        <div className="breathe">
-          <Ring pct={pct} size={140} sw={10} color={orbColor} bg="#D9E8D9">
-            <text x="50%" y="46%" textAnchor="middle" fontSize="28" fontWeight="700" fill={orbColor} fontFamily="Atkinson Hyperlegible,sans-serif">{pct}%</text>
-            <text x="50%" y="62%" textAnchor="middle" fontSize="11" fill="#8FAD8F" fontFamily="Atkinson Hyperlegible,sans-serif">today</text>
-          </Ring>
-        </div>
-        <div className="orb-caption">{orbMsg}</div>
-      </div>
-
-      <div className="cat-rings" style={{marginBottom:20}}>
-        {catStats.map(cat=>(
-          <div key={cat.id} className="cat-ring-item" onClick={()=>setSelCat(selCat===cat.id?null:cat.id)}>
-            <Ring pct={cat.pct} size={52} sw={4} color={cat.color} bg={selCat===cat.id?cat.light:"#E2DDD5"}>
-              <text x="50%" y="50%" textAnchor="middle" dy=".35em" fontSize="16" fontFamily="sans-serif">{cat.emoji}</text>
-            </Ring>
-            <div className="cat-ring-label" style={{color:selCat===cat.id?cat.color:"#8FAD8F"}}>{cat.label.split(" ")[0]}</div>
+      <div className="home-grid">
+        {/* LEFT — orb + category list */}
+        <div>
+          <div style={{background:"rgba(255,255,255,.7)",borderRadius:20,padding:"28px 24px",marginBottom:20,textAlign:"center",boxShadow:"0 2px 12px rgba(0,0,0,.06)"}}>
+            <div className="breathe" style={{display:"inline-block",marginBottom:12}}>
+              <Ring pct={pct} size={160} sw={12} color={orbColor} bg="#D9E8D9">
+                <text x="50%" y="46%" textAnchor="middle" fontSize="32" fontWeight="700" fill={orbColor} fontFamily="Atkinson Hyperlegible,sans-serif">{pct}%</text>
+                <text x="50%" y="62%" textAnchor="middle" fontSize="12" fill="#8FAD8F" fontFamily="Atkinson Hyperlegible,sans-serif">today</text>
+              </Ring>
+            </div>
+            <div style={{fontSize:14,fontWeight:700,color:"#6B8F6B"}}>{orbMsg}</div>
           </div>
-        ))}
-      </div>
-
-      <div className="px">
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-          <div className="sec-label">{selCat?CATS.find(c=>c.id===selCat)?.label:"Daily summary"}</div>
-          <button className="sm-btn sm-btn-green" style={{fontSize:12,padding:"6px 12px"}} onClick={()=>onAddTask()}>+ Task</button>
+          <div style={{background:"rgba(255,255,255,.7)",borderRadius:20,padding:"20px 24px",boxShadow:"0 2px 12px rgba(0,0,0,.06)"}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#8FAD8F",letterSpacing:".1em",textTransform:"uppercase",marginBottom:14}}>By category</div>
+            {catStats.map(cat=>(
+              <div key={cat.id} onClick={()=>setSelCat(selCat===cat.id?null:cat.id)}
+                style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer",padding:"8px 10px",borderRadius:12,marginBottom:6,
+                  background:selCat===cat.id?cat.light:"transparent",transition:"background .15s"}}>
+                <Ring pct={cat.pct} size={44} sw={4} color={cat.color} bg="#E2DDD5">
+                  <text x="50%" y="50%" textAnchor="middle" dy=".35em" fontSize="14" fontFamily="sans-serif">{cat.emoji}</text>
+                </Ring>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:700,fontSize:13,color:cat.color}}>{cat.label}</div>
+                  <div style={{fontSize:11,color:"#8FAD8F",marginTop:1}}>{Math.round(cat.pct)}% done today</div>
+                </div>
+                <div style={{width:56,height:5,borderRadius:99,background:"#E2DDD5",overflow:"hidden"}}>
+                  <div style={{height:"100%",width:`${cat.pct}%`,background:cat.color,borderRadius:99,transition:"width .5s"}}/>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {taskGroups.overdue.length===0&&taskGroups.today.length===0&&taskGroups.doneToday.length===0 ? (
-          <div className="empty">
-            <div className="empty-icon">🌿</div>
-            <div className="empty-msg">All caught up!</div>
-            <div className="empty-sub">Nothing urgent right now</div>
+        {/* RIGHT — task sections */}
+        <div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+            <div className="sec-label">{selCat?CATS.find(c=>c.id===selCat)?.label:"Daily summary"}</div>
+            <button className="sm-btn sm-btn-green" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>onAddTask()}>+ Task</button>
           </div>
-        ) : (<>
-          {taskGroups.overdue.length>0 && (
-            <div style={{marginBottom:22}}>
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,padding:"10px 14px",borderRadius:12,background:"rgba(184,76,76,.1)",border:"1.5px solid rgba(184,76,76,.22)"}}>
-                <span style={{fontSize:18}}>🚨</span>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:700,fontSize:13,color:"#8B2E2E"}}>Overdue</div>
-                  <div style={{fontSize:11,color:"#B84C4C",marginTop:1}}>{taskGroups.overdue.length} task{taskGroups.overdue.length!==1?"s":""} past due — do these first</div>
-                </div>
-                <div style={{fontWeight:700,fontSize:18,color:"#B84C4C"}}>{taskGroups.overdue.length}</div>
-              </div>
-              {taskGroups.overdue.map(t=><TaskPill key={t.id} task={t} plant={plantById(t.plantId)} onToggle={onToggle}/>)}
+          {taskGroups.overdue.length===0&&taskGroups.today.length===0&&taskGroups.doneToday.length===0 ? (
+            <div className="empty" style={{paddingTop:60}}>
+              <div className="empty-icon">🌿</div>
+              <div className="empty-msg">All caught up!</div>
+              <div className="empty-sub">Nothing urgent right now</div>
             </div>
-          )}
-          {taskGroups.today.length>0 && (
-            <div style={{marginBottom:22}}>
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,padding:"10px 14px",borderRadius:12,background:"rgba(176,123,42,.1)",border:"1.5px solid rgba(176,123,42,.22)"}}>
-                <span style={{fontSize:18}}>📍</span>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:700,fontSize:13,color:"#7A5010"}}>Today</div>
-                  <div style={{fontSize:11,color:"#B07B2A",marginTop:1}}>{taskGroups.today.length} task{taskGroups.today.length!==1?"s":""} due today</div>
+          ) : (<>
+            {taskGroups.overdue.length>0 && (
+              <div style={{marginBottom:24}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,padding:"10px 16px",borderRadius:12,background:"rgba(184,76,76,.1)",border:"1.5px solid rgba(184,76,76,.22)"}}>
+                  <span style={{fontSize:18}}>🚨</span>
+                  <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:"#8B2E2E"}}>Overdue</div><div style={{fontSize:11,color:"#B84C4C",marginTop:1}}>{taskGroups.overdue.length} task{taskGroups.overdue.length!==1?"s":""} past due — do these first</div></div>
+                  <div style={{fontWeight:700,fontSize:20,color:"#B84C4C"}}>{taskGroups.overdue.length}</div>
                 </div>
-                <div style={{fontWeight:700,fontSize:18,color:"#B07B2A"}}>{taskGroups.today.length}</div>
+                {taskGroups.overdue.map(t=><TaskPill key={t.id} task={t} plant={plantById(t.plantId)} onToggle={onToggle}/>)}
               </div>
-              {taskGroups.today.map(t=><TaskPill key={t.id} task={t} plant={plantById(t.plantId)} onToggle={onToggle}/>)}
-            </div>
-          )}
-          {taskGroups.doneToday.length>0 && (
-            <div style={{marginBottom:8}}>
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,padding:"10px 14px",borderRadius:12,background:"rgba(58,125,90,.08)",border:"1.5px solid rgba(58,125,90,.18)"}}>
-                <span style={{fontSize:18}}>✅</span>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:700,fontSize:13,color:"#1E5C38"}}>Done today</div>
-                  <div style={{fontSize:11,color:"#3A7D5A",marginTop:1}}>{taskGroups.doneToday.length} completed — great work!</div>
+            )}
+            {taskGroups.today.length>0 && (
+              <div style={{marginBottom:24}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,padding:"10px 16px",borderRadius:12,background:"rgba(176,123,42,.1)",border:"1.5px solid rgba(176,123,42,.22)"}}>
+                  <span style={{fontSize:18}}>📍</span>
+                  <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:"#7A5010"}}>Today</div><div style={{fontSize:11,color:"#B07B2A",marginTop:1}}>{taskGroups.today.length} task{taskGroups.today.length!==1?"s":""} due today</div></div>
+                  <div style={{fontWeight:700,fontSize:20,color:"#B07B2A"}}>{taskGroups.today.length}</div>
                 </div>
-                <div style={{fontWeight:700,fontSize:18,color:"#3A7D5A"}}>{taskGroups.doneToday.length}</div>
+                {taskGroups.today.map(t=><TaskPill key={t.id} task={t} plant={plantById(t.plantId)} onToggle={onToggle}/>)}
               </div>
-              {taskGroups.doneToday.map(t=><TaskPill key={t.id} task={t} plant={plantById(t.plantId)} onToggle={onToggle}/>)}
-            </div>
-          )}
-        </>)}
+            )}
+            {taskGroups.doneToday.length>0 && (
+              <div style={{marginBottom:8}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,padding:"10px 16px",borderRadius:12,background:"rgba(58,125,90,.08)",border:"1.5px solid rgba(58,125,90,.18)"}}>
+                  <span style={{fontSize:18}}>✅</span>
+                  <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:"#1E5C38"}}>Done today</div><div style={{fontSize:11,color:"#3A7D5A",marginTop:1}}>{taskGroups.doneToday.length} completed — great work!</div></div>
+                  <div style={{fontWeight:700,fontSize:20,color:"#3A7D5A"}}>{taskGroups.doneToday.length}</div>
+                </div>
+                {taskGroups.doneToday.map(t=><TaskPill key={t.id} task={t} plant={plantById(t.plantId)} onToggle={onToggle}/>)}
+              </div>
+            )}
+          </>)}
+        </div>
       </div>
     </div>
   );
@@ -488,7 +501,7 @@ function UpcomingScreen({ plants, tasks, onToggle }) {
   ].filter(s=>groups[s.key]?.length>0);
 
   return (
-    <div className="fade-up" style={{padding:"24px 0 0"}}>
+    <div className="fade-up" style={{paddingTop:0}}>
       <div className="px" style={{marginBottom:20}}>
         <div style={{fontSize:22,fontWeight:700,color:"#1E3A1E",marginBottom:4}}>Upcoming tasks</div>
         <div style={{fontSize:13,color:"#8FAD8F"}}>{tasks.filter(t=>!t.done).length} active across {plants.length} plants</div>
@@ -530,7 +543,7 @@ function CalendarScreen({ plants, tasks, onToggle }) {
   const selTasks=selKey?(tasksByDate[selKey]||[]):[];
 
   return (
-    <div className="fade-up" style={{padding:"24px 0 0"}}>
+    <div className="fade-up" style={{paddingTop:0}}>
       <div className="cal-header">
         <button className="sm-btn sm-btn-ghost" onClick={()=>{if(mo===0){setMo(11);setYr(y=>y-1);}else setMo(m=>m-1);setSel(null);}}>←</button>
         <div className="cal-month">{MONTHS[mo]} {yr}</div>
@@ -634,7 +647,7 @@ function PlantsScreen({ plants, tasks, onAddPlant, onAddTask }) {
   },[filtered]);
 
   return (
-    <div className="fade-up" style={{padding:"24px 0 0"}}>
+    <div className="fade-up" style={{paddingTop:0}}>
       <div className="px" style={{marginBottom:16}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
           <div style={{fontSize:22,fontWeight:700,color:"#1E3A1E"}}>Plants</div>
@@ -1027,6 +1040,32 @@ export default function App() {
     <div className="shell">
       <style>{CSS}</style>
 
+      {/* ── Sidebar ── */}
+      <nav className="sidebar">
+        <div className="sidebar-logo">
+          <div style={{fontSize:30,marginBottom:6}}>🌿</div>
+          <div style={{fontSize:17,fontWeight:700,color:"#fff",lineHeight:1}}>Garden Tracker</div>
+          <div style={{fontSize:11,color:"#7DBE9A",marginTop:3}}>Dopamine Farm</div>
+        </div>
+        {NAV.map(n=>(
+          <button key={n.id} className={`nav-btn ${screen===n.id?"active":""}`} onClick={()=>setScreen(n.id)}>
+            <span className="nav-icon">{n.icon}</span>
+            <span className="nav-label">
+              {n.label}
+              {n.id==="upcoming"&&overdueCount>0&&<span style={{marginLeft:6,fontSize:10,background:"#B84C4C",color:"#fff",padding:"1px 6px",borderRadius:20,fontWeight:700}}>{overdueCount}</span>}
+            </span>
+          </button>
+        ))}
+        {/* User pill at bottom of sidebar */}
+        <div style={{marginTop:"auto",padding:"16px 20px 0",borderTop:"1px solid rgba(255,255,255,.1)"}}>
+          <div style={{fontSize:11,color:"#7DBE9A",fontWeight:700,letterSpacing:".06em",textTransform:"uppercase",marginBottom:6}}>Signed in as</div>
+          <div style={{fontSize:13,color:"#fff",fontWeight:700}}>{dispName}</div>
+          <button onClick={()=>{}} style={{marginTop:10,background:"rgba(255,255,255,.1)",border:"none",borderRadius:8,padding:"6px 12px",color:"#9DC4AF",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",width:"100%",textAlign:"left"}}
+            onClick={signOut}>Sign out</button>
+        </div>
+      </nav>
+
+      {/* ── Main content ── */}
       <div className="screen">
         {screen==="home"     && <HomeScreen     plants={plants} tasks={tasks} dispName={dispName} onToggle={toggleDone} onAddTask={openAddTask}/>}
         {screen==="upcoming" && <UpcomingScreen plants={plants} tasks={tasks} onToggle={toggleDone}/>}
@@ -1034,18 +1073,6 @@ export default function App() {
         {screen==="plants"   && <PlantsScreen   plants={plants} tasks={tasks} onAddPlant={()=>setModal("plant")} onAddTask={openAddTask}/>}
         {screen==="settings" && <SettingsScreen user={authUser} garden={garden} members={members} dispName={dispName} onSignOut={signOut}/>}
       </div>
-
-      <nav className="bottom-nav">
-        {NAV.map(n=>(
-          <button key={n.id} className={`nav-btn ${screen===n.id?"active":""}`} onClick={()=>setScreen(n.id)}>
-            <span className="nav-icon">
-              {n.icon}
-              {n.id==="upcoming"&&overdueCount>0&&<sup style={{fontSize:9,color:"#B84C4C",fontWeight:700,marginLeft:1}}>{overdueCount}</sup>}
-            </span>
-            <span className="nav-label">{n.label}</span>
-          </button>
-        ))}
-      </nav>
 
       {modal==="task"  && <AddTaskSheet  plants={plants} defaultPlantId={taskCtx} gardenId={garden.id} onSave={t=>setTasks(ts=>[...ts,t])} onClose={()=>setModal(null)}/>}
       {modal==="plant" && <AddPlantSheet gardenId={garden.id} onSave={p=>setPlants(ps=>[...ps,p])} onClose={()=>setModal(null)}/>}
