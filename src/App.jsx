@@ -579,14 +579,59 @@ function CalendarScreen({ plants, tasks, onToggle }) {
 }
 
 // ─── PLANTS SCREEN ────────────────────────────────────────────────────────────
+const TIER_ORDER = ["Tier 1","Tier 2","Tier 3","Tier 4","Tier 5","Side Tier","By the dam"];
+const TIER_EMOJI = {
+  "Tier 1":"1️⃣", "Tier 2":"2️⃣", "Tier 3":"3️⃣",
+  "Tier 4":"4️⃣", "Tier 5":"5️⃣", "Side Tier":"↔️", "By the dam":"💧"
+};
+
+function PlantRow({ plant, next, onAddTask }) {
+  const urg = next ? urgOf(next.dueDate, false) : "none";
+  return (
+    <div className="plant-row">
+      <span style={{fontSize:24,flexShrink:0}}>{plant.emoji}</span>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontWeight:700,fontSize:14,color:"#1E3A1E"}}>{plant.name}</div>
+        {next ? (
+          <div style={{display:"flex",gap:6,alignItems:"center",marginTop:4,flexWrap:"wrap"}}>
+            <STypeTag type={next.type}/>
+            <span style={{fontSize:11,fontWeight:700,color:URG_COLOR[urg]||"#8FAD8F"}}>{fmtDate(next.dueDate)}</span>
+            <RecChip recur={next.recur}/>
+          </div>
+        ) : (
+          <span style={{fontSize:11,color:"#8FAD8F",marginTop:4,display:"block"}}>No upcoming tasks</span>
+        )}
+      </div>
+      <button onClick={()=>onAddTask(plant.id)} className="sm-btn sm-btn-ghost" style={{fontSize:12,padding:"5px 10px",flexShrink:0}}>+ Task</button>
+    </div>
+  );
+}
+
 function PlantsScreen({ plants, tasks, onAddPlant, onAddTask }) {
-  const [selCat,setSelCat]=useState("all");
-  const [search,setSearch]=useState("");
-  const tasksByPlant=useMemo(()=>{
+  const [viewMode, setViewMode] = useState("tier"); // "tier" | "category"
+  const [search,   setSearch]   = useState("");
+  const [openTiers, setOpenTiers] = useState({});
+  const [openCats,  setOpenCats]  = useState({});
+
+  const tasksByPlant = useMemo(()=>{
     const m={};tasks.forEach(t=>{if(!m[t.plantId])m[t.plantId]=[];m[t.plantId].push(t);});return m;
   },[tasks]);
-  const nextTask=id=>(tasksByPlant[id]||[]).filter(t=>!t.done).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate))[0]||null;
-  const filtered=plants.filter(p=>(selCat==="all"||p.cat===selCat)&&(!search||p.name.toLowerCase().includes(search.toLowerCase())||p.loc.toLowerCase().includes(search.toLowerCase())));
+  const nextTask = id => (tasksByPlant[id]||[]).filter(t=>!t.done).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate))[0]||null;
+
+  const filtered = plants.filter(p =>
+    !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.loc.toLowerCase().includes(search.toLowerCase())
+  );
+
+  function toggleTier(t) { setOpenTiers(o=>({...o,[t]:!o[t]})); }
+  function toggleCat(c)  { setOpenCats(o=>({...o,[c]:!o[c]})); }
+
+  // Get all tiers present in data, ordered
+  const tiers = useMemo(()=>{
+    const found = [...new Set(filtered.map(p=>p.loc).filter(Boolean))];
+    const ordered = TIER_ORDER.filter(t=>found.includes(t));
+    const rest = found.filter(t=>!TIER_ORDER.includes(t));
+    return [...ordered, ...rest];
+  },[filtered]);
 
   return (
     <div className="fade-up" style={{padding:"24px 0 0"}}>
@@ -598,55 +643,119 @@ function PlantsScreen({ plants, tasks, onAddPlant, onAddTask }) {
             <button className="sm-btn sm-btn-green" onClick={()=>onAddTask()}>+ Task</button>
           </div>
         </div>
-        <input placeholder="🔍  Search plants or location…" value={search} onChange={e=>setSearch(e.target.value)}
+
+        {/* Search */}
+        <input placeholder="🔍  Search plants…" value={search} onChange={e=>setSearch(e.target.value)}
           style={{width:"100%",padding:"11px 14px",borderRadius:12,border:"2px solid rgba(0,0,0,.07)",background:"rgba(255,255,255,.8)",fontFamily:"inherit",fontSize:14,color:"#2D3B2D",outline:"none",marginBottom:12}}/>
-        <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4,scrollbarWidth:"none"}}>
-          {[{id:"all",label:"All",emoji:"🌿"},...CATS].map(c=>{
-            const on=selCat===c.id,cc=CATS.find(x=>x.id===c.id);
-            return <button key={c.id} onClick={()=>setSelCat(c.id)}
-              style={{flexShrink:0,padding:"7px 14px",borderRadius:100,fontFamily:"inherit",fontSize:13,fontWeight:700,border:"none",cursor:"pointer",
-                background:on?(cc?.color||"#3A7D5A"):"rgba(255,255,255,.7)",color:on?"#fff":"#6B8F6B",transition:"all .18s",whiteSpace:"nowrap"}}>
-              {c.emoji} {c.label}
-            </button>;
-          })}
+
+        {/* View toggle */}
+        <div style={{display:"flex",gap:6,marginBottom:4}}>
+          {[["tier","📍 By Tier"],["category","🌿 By Category"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setViewMode(v)}
+              style={{padding:"7px 16px",borderRadius:100,fontFamily:"inherit",fontSize:13,fontWeight:700,border:"none",cursor:"pointer",
+                background:viewMode===v?"#3A7D5A":"rgba(255,255,255,.7)",color:viewMode===v?"#fff":"#6B8F6B",transition:"all .18s"}}>
+              {l}
+            </button>
+          ))}
         </div>
       </div>
-      {CATS.filter(c=>selCat==="all"||c.id===selCat).map(cat=>{
-        const cPlants=filtered.filter(p=>p.cat===cat.id);
-        if(!cPlants.length) return null;
-        return (
-          <div key={cat.id} style={{marginBottom:24}}>
-            <div className="px" style={{marginBottom:10}}>
-              <span style={{fontSize:13,fontWeight:700,color:cat.color}}>{cat.emoji} {cat.label}</span>
-              <span style={{fontSize:12,color:"#8FAD8F",marginLeft:8}}>{cPlants.length} plants</span>
-            </div>
-            <div className="px">
-              {cPlants.map(plant=>{
-                const next=nextTask(plant.id);
-                const urg=next?urgOf(next.dueDate,false):"done";
-                return (
-                  <div key={plant.id} className="plant-row">
-                    <span style={{fontSize:24,flexShrink:0}}>{plant.emoji}</span>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontWeight:700,fontSize:14,color:"#1E3A1E"}}>{plant.name}</div>
-                      <div style={{fontSize:11,color:"#8FAD8F",marginTop:1}}>{plant.loc}</div>
-                      {next&&(
-                        <div style={{display:"flex",gap:6,alignItems:"center",marginTop:4,flexWrap:"wrap"}}>
-                          <STypeTag type={next.type}/>
-                          <span style={{fontSize:11,fontWeight:700,color:URG_COLOR[urg]}}>{fmtDate(next.dueDate)}</span>
-                          <RecChip recur={next.recur}/>
-                        </div>
-                      )}
-                      {!next&&<span style={{fontSize:11,color:"#8FAD8F",marginTop:4,display:"block"}}>No upcoming tasks</span>}
-                    </div>
-                    <button onClick={()=>onAddTask(plant.id)} className="sm-btn sm-btn-ghost" style={{fontSize:12,padding:"5px 10px",flexShrink:0}}>+ Task</button>
+
+      {/* ── BY TIER ── */}
+      {viewMode==="tier" && (
+        <div>
+          {tiers.map(tier=>{
+            const tierPlants = filtered.filter(p=>p.loc===tier);
+            if (!tierPlants.length) return null;
+            const isOpen = openTiers[tier] !== false; // default open
+            return (
+              <div key={tier} style={{marginBottom:8}}>
+                {/* Tier header */}
+                <button onClick={()=>toggleTier(tier)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 22px",background:"rgba(58,125,90,.08)",border:"none",cursor:"pointer",fontFamily:"inherit"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{fontSize:18}}>{TIER_EMOJI[tier]||"📍"}</span>
+                    <span style={{fontWeight:700,fontSize:15,color:"#1E3A1E"}}>{tier}</span>
+                    <span style={{fontSize:12,color:"#8FAD8F"}}>{tierPlants.length} plants</span>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
+                  <span style={{fontSize:14,color:"#8FAD8F"}}>{isOpen?"▾":"▸"}</span>
+                </button>
+
+                {isOpen && (
+                  <div style={{padding:"4px 0 8px"}}>
+                    {/* Group by category within tier */}
+                    {CATS.map(cat=>{
+                      const catPlants = tierPlants.filter(p=>p.cat===cat.id);
+                      if (!catPlants.length) return null;
+                      return (
+                        <div key={cat.id} style={{marginBottom:4}}>
+                          <div style={{padding:"6px 22px",display:"flex",alignItems:"center",gap:6}}>
+                            <span style={{fontSize:12}}>{cat.emoji}</span>
+                            <span style={{fontSize:11,fontWeight:700,color:cat.color,letterSpacing:".05em",textTransform:"uppercase"}}>{cat.label}</span>
+                          </div>
+                          <div className="px">
+                            {catPlants.map(plant=><PlantRow key={plant.id} plant={plant} next={nextTask(plant.id)} onAddTask={onAddTask}/>)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── BY CATEGORY ── */}
+      {viewMode==="category" && (
+        <div>
+          {CATS.map(cat=>{
+            const catPlants = filtered.filter(p=>p.cat===cat.id);
+            if (!catPlants.length) return null;
+            const isOpen = openCats[cat.id] !== false; // default open
+            return (
+              <div key={cat.id} style={{marginBottom:8}}>
+                {/* Category header */}
+                <button onClick={()=>toggleCat(cat.id)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 22px",background:cat.light,border:"none",cursor:"pointer",fontFamily:"inherit"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{fontSize:18}}>{cat.emoji}</span>
+                    <span style={{fontWeight:700,fontSize:15,color:cat.color}}>{cat.label}</span>
+                    <span style={{fontSize:12,color:"#8FAD8F"}}>{catPlants.length} plants</span>
+                  </div>
+                  <span style={{fontSize:14,color:"#8FAD8F"}}>{isOpen?"▾":"▸"}</span>
+                </button>
+
+                {isOpen && (
+                  <div style={{padding:"4px 0 8px"}}>
+                    {/* Group by tier within category */}
+                    {tiers.map(tier=>{
+                      const tp = catPlants.filter(p=>p.loc===tier);
+                      if (!tp.length) return null;
+                      return (
+                        <div key={tier} style={{marginBottom:4}}>
+                          <div style={{padding:"6px 22px",display:"flex",alignItems:"center",gap:6}}>
+                            <span style={{fontSize:12}}>{TIER_EMOJI[tier]||"📍"}</span>
+                            <span style={{fontSize:11,fontWeight:700,color:"#6B8F6B",letterSpacing:".05em",textTransform:"uppercase"}}>{tier}</span>
+                          </div>
+                          <div className="px">
+                            {tp.map(plant=><PlantRow key={plant.id} plant={plant} next={nextTask(plant.id)} onAddTask={onAddTask}/>)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {/* Plants with no tier */}
+                    {catPlants.filter(p=>!p.loc).length>0 && (
+                      <div className="px">
+                        {catPlants.filter(p=>!p.loc).map(plant=><PlantRow key={plant.id} plant={plant} next={nextTask(plant.id)} onAddTask={onAddTask}/>)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {filtered.length===0&&<div className="empty px"><div className="empty-icon">🔍</div><div className="empty-msg">No plants match</div></div>}
     </div>
   );
