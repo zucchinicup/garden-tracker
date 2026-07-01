@@ -144,11 +144,14 @@ const DOWS        = ["Su","Mo","Tu","We","Th","Fr","Sa"];
 
 // ─── Property constants ────────────────────────────────────────────────────────
 const PROP_AREAS = [
+  { id:"house",     label:"House & Garden",emoji:"🏠", color:"#7A5C3A", light:"rgba(122,92,58,.1)"   },
   { id:"paddocks",  label:"Paddocks",      emoji:"🌾", color:"#8B6914", light:"rgba(139,105,20,.1)"  },
-  { id:"fences",    label:"Fences",        emoji:"🪵", color:"#7A5C3A", light:"rgba(122,92,58,.1)"   },
-  { id:"water",     label:"Water System",  emoji:"💧", color:"#4A7A8A", light:"rgba(74,122,138,.1)"  },
-  { id:"sheds",     label:"Sheds & Silo",  emoji:"🏚️", color:"#8A5A3A", light:"rgba(138,90,58,.1)"  },
+  { id:"fences",    label:"Fences",        emoji:"🪵", color:"#6A4A2A", light:"rgba(106,74,42,.1)"   },
+  { id:"tanks",     label:"Tanks",         emoji:"🛢️", color:"#4A7A8A", light:"rgba(74,122,138,.1)"  },
+  { id:"shed",      label:"Shed",          emoji:"🏚️", color:"#8A5A3A", light:"rgba(138,90,58,.1)"  },
+  { id:"toolshed",  label:"Tool Shed",     emoji:"🔨", color:"#6A4A3A", light:"rgba(106,74,58,.1)"  },
   { id:"driveway",  label:"Driveway",      emoji:"🛤️", color:"#6A6A5A", light:"rgba(106,106,90,.1)" },
+  { id:"irrigation",label:"Irrigation",    emoji:"🚿", color:"#3A6A8A", light:"rgba(58,106,138,.1)" },
   { id:"general",   label:"General",       emoji:"🔧", color:"#5A5A7A", light:"rgba(90,90,122,.1)"   },
 ];
 const PROP_CHORE_TYPES = ["Mow","Slash","Whipper Snip","Fence Check","Repair","Water Tank","Pump Check","Irrigation","Clean","Inspect","Other"];
@@ -1141,7 +1144,7 @@ function PropertyHomeScreen({ areas, chores, dispName, gardenId, onToggle, onAdd
 }
 
 // ─── ALL PROPERTY CHORES SCREEN ───────────────────────────────────────────────
-function PropertyChoresScreen({ chores, onToggle }) {
+function PropertyChoresScreen({ chores, onToggle, onAddChore }) {
   const areaById = id => PROP_AREAS.find(a=>a.id===id);
   const [filter, setFilter] = useState("active");
 
@@ -1168,7 +1171,10 @@ function PropertyChoresScreen({ chores, onToggle }) {
 
   return (
     <div className="fade-up prop-screen" style={{paddingTop:0}}>
-      <div style={{fontSize:22,fontWeight:700,color:"#2D1F0A",marginBottom:6}}>All chores</div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+        <div style={{fontSize:22,fontWeight:700,color:"#2D1F0A"}}>Tasks</div>
+        <button className="sm-btn sm-btn-brown" onClick={onAddChore}>+ Chore</button>
+      </div>
       <div style={{fontSize:13,color:"#9A8A70",marginBottom:20}}>{chores.filter(c=>!c.done).length} active across the property</div>
       {sections.length===0?(
         <div className="empty"><div className="empty-icon">🏡</div><div style={{fontSize:15,fontWeight:700,color:"#7A6A4A"}}>Nothing pending!</div></div>
@@ -1249,6 +1255,172 @@ function AddChoreSheet({ gardenId, onSave, onClose }) {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+
+// ─── PROPERTY CALENDAR SCREEN ─────────────────────────────────────────────────
+function PropertyCalendarScreen({ chores, onToggle }) {
+  const now = new Date();
+  const [yr, setYr] = useState(now.getFullYear());
+  const [mo, setMo] = useState(now.getMonth());
+  const [sel, setSel] = useState(null);
+  const areaById = id => PROP_AREAS.find(a=>a.id===id);
+
+  const choresByDate = useMemo(()=>{
+    const m={};
+    chores.forEach(c=>{if(!m[c.dueDate])m[c.dueDate]=[];m[c.dueDate].push(c);});
+    return m;
+  },[chores]);
+
+  const first=new Date(yr,mo,1), startDow=first.getDay(), dim=new Date(yr,mo+1,0).getDate(), prevDim=new Date(yr,mo,0).getDate();
+  const cells=[];
+  for(let i=0;i<startDow;i++) cells.push({d:prevDim-startDow+1+i,cur:false});
+  for(let i=1;i<=dim;i++) cells.push({d:i,cur:true});
+  while(cells.length%7!==0) cells.push({d:cells.length-dim-startDow+1,cur:false});
+  const cellKey=d=>`${yr}-${String(mo+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+  const selKey=sel?cellKey(sel):null;
+  const selChores=selKey?(choresByDate[selKey]||[]):[];
+
+  return (
+    <div className="fade-up prop-screen" style={{paddingTop:0}}>
+      <div style={{fontSize:22,fontWeight:700,color:"#2D1F0A",marginBottom:20}}>Calendar</div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,padding:"0 0 0"}}>
+        <button className="sm-btn sm-btn-brown-ghost" onClick={()=>{if(mo===0){setMo(11);setYr(y=>y-1);}else setMo(m=>m-1);setSel(null);}}>← Prev</button>
+        <div style={{fontSize:18,fontWeight:700,color:"#2D1F0A"}}>{MONTHS[mo]} {yr}</div>
+        <button className="sm-btn sm-btn-brown-ghost" onClick={()=>{if(mo===11){setMo(0);setYr(y=>y+1);}else setMo(m=>m+1);setSel(null);}}>Next →</button>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
+        {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d=><div key={d} style={{textAlign:"center",fontSize:10,fontWeight:700,color:"#9A8A70",padding:"4px 0",letterSpacing:".05em"}}>{d}</div>)}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:20}}>
+        {cells.map((cell,i)=>{
+          const key=cell.cur?cellKey(cell.d):null;
+          const dcs=key?(choresByDate[key]||[]):[];
+          const isTod=key===TODAY, isSel=cell.cur&&cell.d===sel;
+          return (
+            <div key={i} onClick={()=>cell.cur&&setSel(cell.d===sel?null:cell.d)}
+              style={{minHeight:64,borderRadius:12,padding:"6px 5px",
+                background:isSel?"rgba(255,255,255,.95)":isTod?"rgba(122,92,58,.12)":"rgba(255,250,242,.7)",
+                border:isSel?"2px solid #7A5C3A":isTod?"2px solid #7A5C3A":"2px solid transparent",
+                cursor:cell.cur?"pointer":"default",opacity:cell.cur?1:.3,transition:"all .15s"}}>
+              <div style={{fontSize:12,fontWeight:700,color:"#3B2A1A",marginBottom:3}}>{cell.d}</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:2}}>
+                {dcs.slice(0,5).map(c=><span key={c.id} style={{width:6,height:6,borderRadius:"50%",display:"inline-block",background:URG_COLOR[urgOf(c.dueDate,c.done)]}}/>)}
+                {dcs.length>5&&<span style={{fontSize:8,color:"#9A8A70",fontWeight:700}}>+{dcs.length-5}</span>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {/* Legend */}
+      <div style={{display:"flex",gap:14,marginBottom:20,flexWrap:"wrap"}}>
+        {Object.entries(URG_COLOR).map(([k,c])=>(
+          <div key={k} style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"#9A8A70"}}>
+            <span style={{width:8,height:8,borderRadius:"50%",background:c,display:"inline-block"}}/>{URG_LABEL[k]}
+          </div>
+        ))}
+      </div>
+      {selKey&&(
+        <div style={{background:"rgba(255,250,242,.9)",borderRadius:16,padding:"16px",border:"1.5px solid rgba(122,92,58,.2)"}}>
+          <div style={{fontWeight:700,fontSize:15,color:"#2D1F0A",marginBottom:12}}>
+            📅 {fmtDate(selKey)} <span style={{fontWeight:400,color:"#9A8A70",fontSize:13}}>— {selChores.length} chore{selChores.length!==1?"s":""}</span>
+          </div>
+          {selChores.length===0
+            ?<div style={{color:"#9A8A70",fontSize:13,textAlign:"center",padding:"12px 0"}}>Nothing scheduled</div>
+            :selChores.map(c=><ChorePill key={c.id} chore={c} area={areaById(c.areaId)} onToggle={onToggle}/>)
+          }
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── PROPERTY AREAS SCREEN ────────────────────────────────────────────────────
+function PropertyAreasScreen({ chores, onToggle, onAddChore }) {
+  const [openAreas, setOpenAreas] = useState({});
+  const toggleArea = id => setOpenAreas(o=>({...o,[id]:!o[id]}));
+
+  const choresByArea = useMemo(()=>{
+    const m={};
+    chores.forEach(c=>{ if(!m[c.areaId])m[c.areaId]=[]; m[c.areaId].push(c); });
+    return m;
+  },[chores]);
+
+  // Include areas that have chores + all defined areas
+  const activeAreas = PROP_AREAS.filter(a => (choresByArea[a.id]||[]).length > 0 || true);
+
+  return (
+    <div className="fade-up prop-screen" style={{paddingTop:0}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+        <div>
+          <div style={{fontSize:22,fontWeight:700,color:"#2D1F0A",marginBottom:4}}>Areas</div>
+          <div style={{fontSize:13,color:"#9A8A70"}}>{PROP_AREAS.length} areas across the property</div>
+        </div>
+        <button className="sm-btn sm-btn-brown" onClick={onAddChore}>+ Chore</button>
+      </div>
+
+      {activeAreas.map(area=>{
+        const areaChores = (choresByArea[area.id]||[]);
+        const active = areaChores.filter(c=>!c.done).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate));
+        const done   = areaChores.filter(c=>c.done);
+        const overdue = active.filter(c=>urgOf(c.dueDate,false)==="overdue").length;
+        const isOpen = openAreas[area.id] !== false; // default open
+
+        return (
+          <div key={area.id} style={{marginBottom:12}}>
+            {/* Area header */}
+            <button onClick={()=>toggleArea(area.id)}
+              style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",
+                padding:"14px 18px",borderRadius:14,background:area.light,border:`1.5px solid ${area.color}22`,
+                cursor:"pointer",fontFamily:"inherit",marginBottom:isOpen&&areaChores.length>0?8:0,transition:"all .15s"}}>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                <span style={{fontSize:22}}>{area.emoji}</span>
+                <div style={{textAlign:"left"}}>
+                  <div style={{fontWeight:700,fontSize:15,color:area.color}}>{area.label}</div>
+                  <div style={{fontSize:11,color:"#9A8A70",marginTop:2}}>
+                    {active.length} active task{active.length!==1?"s":""}
+                    {overdue>0&&<span style={{color:"#B84C4C",fontWeight:700,marginLeft:6}}>· {overdue} overdue</span>}
+                    {areaChores.length===0&&<span style={{color:"#C0B0A0"}}>— no chores yet</span>}
+                  </div>
+                </div>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                {/* Mini progress bar */}
+                {areaChores.length>0&&(
+                  <div style={{width:48,height:5,borderRadius:99,background:"#E8D8C0",overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${areaChores.length===0?100:Math.round((done.length/areaChores.length)*100)}%`,background:area.color,borderRadius:99}}/>
+                  </div>
+                )}
+                <span style={{fontSize:14,color:area.color}}>{isOpen?"▾":"▸"}</span>
+              </div>
+            </button>
+
+            {isOpen&&areaChores.length>0&&(
+              <div style={{paddingLeft:8}}>
+                {/* Overdue */}
+                {active.filter(c=>urgOf(c.dueDate,false)==="overdue").map(c=><ChorePill key={c.id} chore={c} area={area} onToggle={onToggle}/>)}
+                {/* Today */}
+                {active.filter(c=>urgOf(c.dueDate,false)==="today").map(c=><ChorePill key={c.id} chore={c} area={area} onToggle={onToggle}/>)}
+                {/* This week */}
+                {active.filter(c=>urgOf(c.dueDate,false)==="week").map(c=><ChorePill key={c.id} chore={c} area={area} onToggle={onToggle}/>)}
+                {/* Upcoming */}
+                {active.filter(c=>urgOf(c.dueDate,false)==="upcoming").map(c=><ChorePill key={c.id} chore={c} area={area} onToggle={onToggle}/>)}
+                {/* Done (dimmed) */}
+                {done.slice(0,3).map(c=><ChorePill key={c.id} chore={c} area={area} onToggle={onToggle}/>)}
+                {done.length>3&&<div style={{fontSize:12,color:"#9A8A70",padding:"4px 16px"}}>+ {done.length-3} more completed</div>}
+              </div>
+            )}
+
+            {isOpen&&areaChores.length===0&&(
+              <div style={{padding:"12px 18px",fontSize:13,color:"#9A8A70",fontStyle:"italic"}}>
+                No chores added yet — <button onClick={onAddChore} style={{background:"none",border:"none",color:area.color,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:13}}>add one</button>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1362,11 +1534,12 @@ export default function App() {
     {id:"upcoming", icon:"📋", label:"Tasks"},
     {id:"calendar", icon:"📅", label:"Calendar"},
     {id:"plants",   icon:"🌳", label:"Plants"},
-    {id:"settings", icon:"⚙️", label:"Settings"},
   ];
   const PROP_NAV = [
-    {id:"prop-home",  icon:"🏡", label:"Property"},
-    {id:"prop-chores",icon:"📋", label:"All chores"},
+    {id:"prop-home",    icon:"🏡", label:"Home"},
+    {id:"prop-tasks",   icon:"📋", label:"Tasks"},
+    {id:"prop-calendar",icon:"📅", label:"Calendar"},
+    {id:"prop-areas",   icon:"📍", label:"Areas"},
   ];
 
   const isPropScreen = screen.startsWith("prop-");
@@ -1408,12 +1581,18 @@ export default function App() {
             <span className="nav-icon">{n.icon}</span>
             <span className="nav-label" style={{color:screen===n.id?"#D4A574":"#C4A882"}}>
               {n.label}
-              {n.id==="prop-chores"&&overdueProperty>0&&<span style={{marginLeft:6,fontSize:10,background:"#B84C4C",color:"#fff",padding:"1px 6px",borderRadius:20,fontWeight:700}}>{overdueProperty}</span>}
+              {n.id==="prop-tasks"&&overdueProperty>0&&<span style={{marginLeft:6,fontSize:10,background:"#B84C4C",color:"#fff",padding:"1px 6px",borderRadius:20,fontWeight:700}}>{overdueProperty}</span>}
             </span>
           </button>
         ))}
 
-        {/* Sign out */}
+        {/* Settings & sign out */}
+        <hr style={{margin:"14px 20px",border:"none",borderTop:"1px solid rgba(255,255,255,.1)"}}/>
+        <div style={{padding:"2px 20px 4px",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.35)",letterSpacing:".1em",textTransform:"uppercase"}}>⚙️ Account</div>
+        <button className={`nav-btn ${screen==="settings"?"active":""}`} onClick={()=>setScreen("settings")}>
+          <span className="nav-icon">⚙️</span>
+          <span className="nav-label">Settings</span>
+        </button>
         <div style={{marginTop:"auto",padding:"16px 20px 0",borderTop:"1px solid rgba(255,255,255,.1)"}}>
           <button onClick={signOut} style={{background:"rgba(255,255,255,.08)",border:"none",borderRadius:8,padding:"8px 12px",color:"#9DC4AF",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",width:"100%",textAlign:"left"}}>
             Sign out
@@ -1428,8 +1607,10 @@ export default function App() {
         {screen==="calendar"   && <CalendarScreen     plants={plants} tasks={tasks} onToggle={toggleDone}/>}
         {screen==="plants"     && <PlantsScreen       plants={plants} tasks={tasks} onAddPlant={()=>setModal("plant")} onAddTask={openAddTask}/>}
         {screen==="settings"   && <SettingsScreen     user={authUser} garden={garden} members={members} dispName={dispName} onSignOut={signOut}/>}
-        {screen==="prop-home"  && <PropertyHomeScreen chores={chores} dispName={dispName} gardenId={garden.id} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")}/>}
-        {screen==="prop-chores"&& <PropertyChoresScreen chores={chores} onToggle={toggleChoreDone}/>}
+        {screen==="prop-home"    && <PropertyHomeScreen    chores={chores} dispName={dispName} gardenId={garden.id} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")}/>}
+        {screen==="prop-tasks"   && <PropertyChoresScreen  chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")}/>}
+        {screen==="prop-calendar"&& <PropertyCalendarScreen chores={chores} onToggle={toggleChoreDone}/>}
+        {screen==="prop-areas"   && <PropertyAreasScreen   chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")}/>}
       </div>
 
       {modal==="task"  && <AddTaskSheet  plants={plants} defaultPlantId={taskCtx} gardenId={garden.id} onSave={t=>setTasks(ts=>[...ts,t])} onClose={()=>setModal(null)}/>}
