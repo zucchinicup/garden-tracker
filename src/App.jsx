@@ -97,6 +97,30 @@ const CSS = `
   .breathe { animation:breathe 4s ease-in-out infinite; }
   .spin { animation:spin 1s linear infinite; }
   .err { background:#FDECEA; border:1.5px solid rgba(184,76,76,.3); border-radius:10px; padding:10px 14px; font-size:13px; color:#8B2E2E; margin-bottom:14px; }
+
+  /* ── Property module — earthy brown & tan ── */
+  body.prop-mode { background: linear-gradient(160deg, #EDE5D8 0%, #F5EDE0 50%, #EAE0CE 100%); }
+  .prop-screen   { background: linear-gradient(160deg, #EDE5D8 0%, #F5EDE0 50%, #EAE0CE 100%); min-height:100%; }
+  .prop-pill     { display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:16px; background:rgba(255,250,242,.85); border:1.5px solid rgba(255,250,242,.95); margin-bottom:10px; backdrop-filter:blur(4px); transition:background .15s; }
+  .prop-pill:hover { background:rgba(255,255,255,.95); }
+  .prop-pill.done  { opacity:.45; }
+  .prop-pill.urgent{ border-color:rgba(180,94,40,.3); background:rgba(255,248,240,.9); }
+  .prop-pill.warn  { border-color:rgba(180,140,60,.3); background:rgba(255,252,235,.9); }
+  .chk-prop { width:26px; height:26px; border-radius:50%; border:2.5px solid #C9B89A; background:transparent; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .2s; }
+  .chk-prop.on { background:#7A5C3A; border-color:#7A5C3A; }
+  .prop-tag  { display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:700; }
+  .prop-area-hdr { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-radius:12px; background:rgba(180,140,100,.12); border:none; cursor:pointer; font-family:inherit; width:100%; margin-bottom:8px; }
+  .nav-btn.prop-active { background:rgba(255,255,255,.1); border-left-color:#D4A574; }
+  .nav-btn.prop-active .nav-label { color:#D4A574; }
+  .sidebar-divider { margin:12px 20px; border:none; border-top:1px solid rgba(255,255,255,.1); }
+  .sidebar-section-label { padding:8px 20px 4px; font-size:10px; font-weight:700; color:rgba(255,255,255,.35); letter-spacing:.1em; text-transform:uppercase; }
+  .sm-btn-brown { background:#7A5C3A; color:#fff; }
+  .sm-btn-brown:hover { background:#5E4429; }
+  .sm-btn-brown-ghost { background:rgba(122,92,58,.1); color:#7A5C3A; }
+  .sm-btn-brown-ghost:hover { background:rgba(122,92,58,.2); }
+  .big-btn-brown { background:#7A5C3A; color:#fff; }
+  .big-btn-brown:hover { background:#5E4429; }
+  .prop-home-grid { display:grid; grid-template-columns:300px 1fr; gap:32px; align-items:start; }
 `;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -117,6 +141,19 @@ const RECUR_OPTS  = [
 const RECUR_SHORT = {"7":"Weekly","14":"Fortnightly","30":"Monthly","60":"2-monthly","90":"Quarterly","180":"6-monthly","365":"Yearly"};
 const MONTHS      = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DOWS        = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+
+// ─── Property constants ────────────────────────────────────────────────────────
+const PROP_AREAS = [
+  { id:"paddocks",  label:"Paddocks",      emoji:"🌾", color:"#8B6914", light:"rgba(139,105,20,.1)"  },
+  { id:"fences",    label:"Fences",        emoji:"🪵", color:"#7A5C3A", light:"rgba(122,92,58,.1)"   },
+  { id:"water",     label:"Water System",  emoji:"💧", color:"#4A7A8A", light:"rgba(74,122,138,.1)"  },
+  { id:"sheds",     label:"Sheds & Silo",  emoji:"🏚️", color:"#8A5A3A", light:"rgba(138,90,58,.1)"  },
+  { id:"driveway",  label:"Driveway",      emoji:"🛤️", color:"#6A6A5A", light:"rgba(106,106,90,.1)" },
+  { id:"general",   label:"General",       emoji:"🔧", color:"#5A5A7A", light:"rgba(90,90,122,.1)"   },
+];
+const PROP_CHORE_TYPES = ["Mow","Slash","Whipper Snip","Fence Check","Repair","Water Tank","Pump Check","Irrigation","Clean","Inspect","Other"];
+const PROP_TYPE_EMOJI  = { "Mow":"🌿","Slash":"⚔️","Whipper Snip":"✂️","Fence Check":"🪵","Repair":"🔧","Water Tank":"💧","Pump Check":"⚙️","Irrigation":"🚿","Clean":"🧹","Inspect":"👁️","Other":"📝" };
+const PROP_TYPE_COLOR  = { "Mow":"#5A7A3A","Slash":"#7A5A3A","Whipper Snip":"#6A5A3A","Fence Check":"#7A5C3A","Repair":"#8A4A2A","Water Tank":"#4A7A8A","Pump Check":"#5A6A7A","Irrigation":"#3A6A8A","Clean":"#6A6A5A","Inspect":"#5A5A7A","Other":"#7A7A5A" };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const TODAY = new Date().toISOString().slice(0,10);
@@ -932,6 +969,290 @@ function AddPlantSheet({ gardenId, onSave, onClose }) {
   );
 }
 
+
+// ─── PROPERTY: map task rows ─────────────────────────────────────────────────
+function mapChore(r) {
+  return {
+    id:r.id, areaId:r.area_id, gardenId:r.garden_id,
+    type:r.chore_type, dueDate:r.due_date,
+    done:!!r.completed_at, doneBy:r.completed_by_name||null, doneAt:r.completed_at?r.completed_at.slice(0,10):null,
+    note:r.notes||"", recur:r.recurrence_days?String(r.recurrence_days):"",
+  };
+}
+
+// ─── PROPERTY CHORE PILL ─────────────────────────────────────────────────────
+function ChorePill({ chore, area, onToggle }) {
+  const urg = urgOf(chore.dueDate, chore.done);
+  const cls = urg==="overdue"?"urgent":urg==="today"?"warn":"";
+  const c = PROP_TYPE_COLOR[chore.type]||"#7A5C3A";
+  return (
+    <div className={`prop-pill ${chore.done?"done":""} ${cls}`}>
+      <button className={`chk-prop ${chore.done?"on":""}`} onClick={e=>{e.stopPropagation();onToggle(chore.id);}}>
+        {chore.done&&<svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.5 7l3 3 5-5.5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>}
+      </button>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap",marginBottom:3}}>
+          <span style={{fontSize:15}}>{area?.emoji||"🔧"}</span>
+          <span style={{fontWeight:700,fontSize:14,color:"#2D1F0A"}}>{area?.label||"Property"}</span>
+          <span className="prop-tag" style={{background:c+"18",color:c,border:`1.5px solid ${c}44`}}>{PROP_TYPE_EMOJI[chore.type]||"📝"} {chore.type}</span>
+          {chore.recur&&<span className="rec-chip">🔄 {RECUR_SHORT[chore.recur]||chore.recur+"d"}</span>}
+        </div>
+        <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+          <span style={{fontSize:11,color:URG_COLOR[urg],fontWeight:700}}>{urg==="done"?"✓ Done":fmtDate(chore.dueDate)}</span>
+          {chore.note&&<span style={{fontSize:11,color:"#9A8A70",fontStyle:"italic"}}>— {chore.note}</span>}
+          {chore.done&&chore.doneBy&&<span style={{fontSize:11,color:"#7A5C3A",fontWeight:700}}>by {chore.doneBy}</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── PROPERTY HOME SCREEN ─────────────────────────────────────────────────────
+function PropertyHomeScreen({ areas, chores, dispName, gardenId, onToggle, onAddChore }) {
+  const [selArea, setSelArea] = useState(null);
+  const areaById = id => PROP_AREAS.find(a=>a.id===id);
+
+  const actionable = chores.filter(t=>!t.done&&(urgOf(t.dueDate,false)==="overdue"||urgOf(t.dueDate,false)==="today"));
+  const doneToday  = chores.filter(t=>t.done&&t.doneAt===TODAY);
+  const totalNow   = actionable.length+doneToday.length;
+  const pct        = totalNow===0?100:Math.round((doneToday.length/totalNow)*100);
+  const overdue    = chores.filter(t=>!t.done&&urgOf(t.dueDate,false)==="overdue").length;
+
+  const choreGroups = useMemo(()=>{
+    const rel = chores.filter(t=>{
+      const u=urgOf(t.dueDate,t.done);
+      if(u==="upcoming"||u==="week") return false;
+      if(u==="done"&&t.doneAt!==TODAY) return false;
+      return true;
+    });
+    const fil = selArea ? rel.filter(t=>t.areaId===selArea) : rel;
+    const byDate = a=>[...a].sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate));
+    return {
+      overdue:  byDate(fil.filter(t=>urgOf(t.dueDate,t.done)==="overdue")),
+      today:    byDate(fil.filter(t=>urgOf(t.dueDate,t.done)==="today")),
+      doneToday:byDate(fil.filter(t=>t.done&&t.doneAt===TODAY)),
+    };
+  },[chores,selArea]);
+
+  const areaStats = PROP_AREAS.map(area=>{
+    const ac = chores.filter(t=>t.areaId===area.id);
+    const act = ac.filter(t=>!t.done&&(urgOf(t.dueDate,false)==="overdue"||urgOf(t.dueDate,false)==="today"));
+    const don = ac.filter(t=>t.done&&t.doneAt===TODAY);
+    const tot = act.length+don.length;
+    return {...area,pct:tot===0?100:Math.round((don.length/tot)*100),total:tot};
+  }).filter(a=>a.total>0||chores.some(c=>c.areaId===a.id));
+
+  const orbColor = pct===100?"#7A5C3A":overdue>0?"#B84C4C":"#B07B2A";
+  const orbMsg   = pct===100?"All chores done! 🏡":overdue>0?`${overdue} overdue — start here`:`${totalNow-doneToday.length} chores need doing`;
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long"});
+
+  return (
+    <div className="fade-up prop-screen">
+      <div className="hero">
+        <div className="hero-date">{dateStr}</div>
+        <div style={{fontSize:28,fontWeight:700,color:"#2D1F0A",lineHeight:1.2,marginBottom:4}}>Property chores 🏡</div>
+        <div style={{fontSize:14,color:"#8A7A5A"}}>Dopamine Farm</div>
+      </div>
+
+      <div className="prop-home-grid">
+        {/* LEFT — orb + area list */}
+        <div>
+          <div style={{background:"rgba(255,250,242,.85)",borderRadius:20,padding:"28px 24px",marginBottom:20,textAlign:"center",boxShadow:"0 2px 12px rgba(122,92,58,.1)"}}>
+            <div className="breathe" style={{display:"inline-block",marginBottom:12}}>
+              <Ring pct={pct} size={160} sw={12} color={orbColor} bg="#E8D8C0">
+                <text x="50%" y="46%" textAnchor="middle" fontSize="32" fontWeight="700" fill={orbColor} fontFamily="Atkinson Hyperlegible,sans-serif">{pct}%</text>
+                <text x="50%" y="62%" textAnchor="middle" fontSize="12" fill="#9A8A70" fontFamily="Atkinson Hyperlegible,sans-serif">today</text>
+              </Ring>
+            </div>
+            <div style={{fontSize:14,fontWeight:700,color:"#8A7A5A"}}>{orbMsg}</div>
+          </div>
+          <div style={{background:"rgba(255,250,242,.85)",borderRadius:20,padding:"20px 24px",boxShadow:"0 2px 12px rgba(122,92,58,.1)"}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#9A8A70",letterSpacing:".1em",textTransform:"uppercase",marginBottom:14}}>By area</div>
+            {areaStats.length===0&&<div style={{fontSize:13,color:"#9A8A70",textAlign:"center",padding:"12px 0"}}>No chores yet — add some!</div>}
+            {areaStats.map(area=>(
+              <div key={area.id} onClick={()=>setSelArea(selArea===area.id?null:area.id)}
+                style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer",padding:"8px 10px",borderRadius:12,marginBottom:6,
+                  background:selArea===area.id?area.light:"transparent",transition:"background .15s"}}>
+                <Ring pct={area.pct} size={44} sw={4} color={area.color} bg="#E8D8C0">
+                  <text x="50%" y="50%" textAnchor="middle" dy=".35em" fontSize="14" fontFamily="sans-serif">{area.emoji}</text>
+                </Ring>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:700,fontSize:13,color:area.color}}>{area.label}</div>
+                  <div style={{fontSize:11,color:"#9A8A70",marginTop:1}}>{Math.round(area.pct)}% done today</div>
+                </div>
+                <div style={{width:56,height:5,borderRadius:99,background:"#E8D8C0",overflow:"hidden"}}>
+                  <div style={{height:"100%",width:`${area.pct}%`,background:area.color,borderRadius:99,transition:"width .5s"}}/>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* RIGHT — chore sections */}
+        <div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+            <div style={{fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:"#9A8A70"}}>{selArea?PROP_AREAS.find(a=>a.id===selArea)?.label:"Daily chores"}</div>
+            <button className="sm-btn sm-btn-brown" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>onAddChore()}>+ Chore</button>
+          </div>
+
+          {choreGroups.overdue.length===0&&choreGroups.today.length===0&&choreGroups.doneToday.length===0 ? (
+            <div className="empty" style={{paddingTop:60}}>
+              <div className="empty-icon">🏡</div>
+              <div style={{fontSize:15,fontWeight:700,color:"#7A6A4A"}}>All clear!</div>
+              <div style={{fontSize:13,marginTop:4,color:"#9A8A70"}}>Nothing urgent right now</div>
+            </div>
+          ) : (<>
+            {choreGroups.overdue.length>0&&(
+              <div style={{marginBottom:24}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,padding:"10px 16px",borderRadius:12,background:"rgba(184,76,76,.1)",border:"1.5px solid rgba(184,76,76,.22)"}}>
+                  <span style={{fontSize:18}}>🚨</span>
+                  <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:"#8B2E2E"}}>Overdue</div><div style={{fontSize:11,color:"#B84C4C",marginTop:1}}>{choreGroups.overdue.length} chore{choreGroups.overdue.length!==1?"s":""} past due</div></div>
+                  <div style={{fontWeight:700,fontSize:20,color:"#B84C4C"}}>{choreGroups.overdue.length}</div>
+                </div>
+                {choreGroups.overdue.map(c=><ChorePill key={c.id} chore={c} area={areaById(c.areaId)} onToggle={onToggle}/>)}
+              </div>
+            )}
+            {choreGroups.today.length>0&&(
+              <div style={{marginBottom:24}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,padding:"10px 16px",borderRadius:12,background:"rgba(176,123,42,.1)",border:"1.5px solid rgba(176,123,42,.22)"}}>
+                  <span style={{fontSize:18}}>📍</span>
+                  <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:"#7A5010"}}>Today</div><div style={{fontSize:11,color:"#B07B2A",marginTop:1}}>{choreGroups.today.length} chore{choreGroups.today.length!==1?"s":""} due today</div></div>
+                  <div style={{fontWeight:700,fontSize:20,color:"#B07B2A"}}>{choreGroups.today.length}</div>
+                </div>
+                {choreGroups.today.map(c=><ChorePill key={c.id} chore={c} area={areaById(c.areaId)} onToggle={onToggle}/>)}
+              </div>
+            )}
+            {choreGroups.doneToday.length>0&&(
+              <div style={{marginBottom:8}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,padding:"10px 16px",borderRadius:12,background:"rgba(122,92,58,.08)",border:"1.5px solid rgba(122,92,58,.2)"}}>
+                  <span style={{fontSize:18}}>✅</span>
+                  <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:"#4A3010"}}>Done today</div><div style={{fontSize:11,color:"#7A5C3A",marginTop:1}}>{choreGroups.doneToday.length} completed — nice work!</div></div>
+                  <div style={{fontWeight:700,fontSize:20,color:"#7A5C3A"}}>{choreGroups.doneToday.length}</div>
+                </div>
+                {choreGroups.doneToday.map(c=><ChorePill key={c.id} chore={c} area={areaById(c.areaId)} onToggle={onToggle}/>)}
+              </div>
+            )}
+          </>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ALL PROPERTY CHORES SCREEN ───────────────────────────────────────────────
+function PropertyChoresScreen({ chores, onToggle }) {
+  const areaById = id => PROP_AREAS.find(a=>a.id===id);
+  const [filter, setFilter] = useState("active");
+
+  const filtered = [...chores]
+    .filter(c => filter==="done"?c.done:filter==="active"?!c.done:true)
+    .sort((a,b)=>{
+      if(a.done!==b.done) return a.done?1:-1;
+      return new Date(a.dueDate)-new Date(b.dueDate);
+    });
+
+  const groups = useMemo(()=>{
+    const g={overdue:[],today:[],week:[],upcoming:[]};
+    chores.filter(c=>!c.done).forEach(c=>{const u=urgOf(c.dueDate,false);if(g[u])g[u].push(c);});
+    Object.values(g).forEach(a=>a.sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)));
+    return g;
+  },[chores]);
+
+  const sections=[
+    {key:"overdue",label:"🚨 Overdue",color:URG_COLOR.overdue},
+    {key:"today",label:"📍 Today",color:URG_COLOR.today},
+    {key:"week",label:"📅 This week",color:URG_COLOR.week},
+    {key:"upcoming",label:"🔭 Coming up",color:URG_COLOR.upcoming},
+  ].filter(s=>groups[s.key]?.length>0);
+
+  return (
+    <div className="fade-up prop-screen" style={{paddingTop:0}}>
+      <div style={{fontSize:22,fontWeight:700,color:"#2D1F0A",marginBottom:6}}>All chores</div>
+      <div style={{fontSize:13,color:"#9A8A70",marginBottom:20}}>{chores.filter(c=>!c.done).length} active across the property</div>
+      {sections.length===0?(
+        <div className="empty"><div className="empty-icon">🏡</div><div style={{fontSize:15,fontWeight:700,color:"#7A6A4A"}}>Nothing pending!</div></div>
+      ):sections.map(s=>(
+        <div key={s.key} style={{marginBottom:24}}>
+          <div style={{marginBottom:10}}>
+            <span style={{fontSize:13,fontWeight:700,color:s.color}}>{s.label}</span>
+            <span style={{fontSize:12,color:"#9A8A70",marginLeft:8}}>{groups[s.key].length} chore{groups[s.key].length!==1?"s":""}</span>
+          </div>
+          {groups[s.key].map(c=><ChorePill key={c.id} chore={c} area={areaById(c.areaId)} onToggle={onToggle}/>)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── ADD CHORE SHEET ──────────────────────────────────────────────────────────
+function AddChoreSheet({ gardenId, onSave, onClose }) {
+  const [areaId, setAreaId] = useState("paddocks");
+  const [type,   setType]   = useState("Mow");
+  const [due,    setDue]    = useState(TODAY);
+  const [note,   setNote]   = useState("");
+  const [recur,  setRecur]  = useState("");
+  const [saving, setSaving] = useState(false);
+  const [err,    setErr]    = useState("");
+
+  async function save() {
+    setSaving(true); setErr("");
+    const { data, error } = await sb.from("property_chores").insert({
+      garden_id: gardenId, area_id: areaId,
+      chore_type: type, due_date: due,
+      recurrence_days: recur ? Number(recur) : null, notes: note,
+    }).select().single();
+    if (error) { setErr(error.message); setSaving(false); return; }
+    onSave(mapChore(data));
+    onClose();
+  }
+
+  return (
+    <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="sheet" style={{background:"linear-gradient(180deg,#F5EDE0 0%,#EAE0CE 100%)"}}>
+        <div className="sheet-handle"/>
+        <div style={{fontWeight:700,fontSize:20,color:"#2D1F0A",marginBottom:20}}>Add property chore</div>
+        {err&&<div className="err">{err}</div>}
+        <div className="field">
+          <label>Area</label>
+          <select value={areaId} onChange={e=>setAreaId(e.target.value)} style={{borderColor:"rgba(122,92,58,.2)"}}>
+            {PROP_AREAS.map(a=><option key={a.id} value={a.id}>{a.emoji} {a.label}</option>)}
+          </select>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          <div className="field">
+            <label>Chore type</label>
+            <select value={type} onChange={e=>setType(e.target.value)} style={{borderColor:"rgba(122,92,58,.2)"}}>
+              {PROP_CHORE_TYPES.map(t=><option key={t}>{t}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Due date</label>
+            <input type="date" value={due} onChange={e=>setDue(e.target.value)} style={{borderColor:"rgba(122,92,58,.2)"}}/>
+          </div>
+        </div>
+        <div className="field">
+          <label>Repeats</label>
+          <select value={recur} onChange={e=>setRecur(e.target.value)} style={{borderColor:"rgba(122,92,58,.2)"}}>
+            {RECUR_OPTS.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
+          </select>
+        </div>
+        {recur&&<div style={{background:"rgba(122,92,58,.08)",border:"1.5px solid rgba(122,92,58,.2)",borderRadius:12,padding:"10px 14px",marginBottom:16,fontSize:13,color:"#7A5C3A",fontWeight:700}}>🔄 Next chore auto-schedules after completion</div>}
+        <div className="field">
+          <label>Notes</label>
+          <textarea rows={2} value={note} onChange={e=>setNote(e.target.value)} placeholder="Any details…" style={{resize:"vertical",borderColor:"rgba(122,92,58,.2)"}}/>
+        </div>
+        <div style={{display:"flex",gap:10,marginTop:4}}>
+          <button onClick={onClose} className="big-btn" style={{background:"rgba(0,0,0,.07)",color:"#8A7A5A",flex:1}}>Cancel</button>
+          <button onClick={save} disabled={saving} className="big-btn big-btn-brown" style={{flex:2}}>
+            {saving?<Spinner/>:"Save chore"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── ROOT APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [authUser,  setAuthUser]  = useState(null);
@@ -941,6 +1262,7 @@ export default function App() {
   const [dispName,  setDispName]  = useState("");
   const [plants,    setPlants]    = useState([]);
   const [tasks,     setTasks]     = useState([]);
+  const [chores,    setChores]    = useState([]);
   const [loading,   setLoading]   = useState(false);
   const [screen,    setScreen]    = useState("home");
   const [modal,     setModal]     = useState(null);
@@ -958,57 +1280,46 @@ export default function App() {
     return ()=>subscription.unsubscribe();
   },[]);
 
-  // ── Load garden when user logs in ──
   useEffect(()=>{
-    if (!authUser) { setGarden(null); setPlants([]); setTasks([]); return; }
+    if (!authUser) { setGarden(null); setPlants([]); setTasks([]); setChores([]); return; }
     loadGarden();
   },[authUser]);
 
   async function loadGarden() {
     setLoading(true);
-    // Find membership
     const { data: mem } = await sb.from("garden_members").select("*, gardens(*)").eq("user_id", authUser.id).single();
-    if (!mem) { setLoading(false); return; } // no garden yet — show setup
+    if (!mem) { setLoading(false); return; }
     const g = mem.gardens;
     setGarden(g);
     setDispName(mem.display_name||authUser.email?.split("@")[0]||"");
-
-    // Load all members
     const { data: allMembers } = await sb.from("garden_members").select("*").eq("garden_id", g.id);
     setMembers(allMembers||[]);
-
-    // Load plants
     const { data: plantsData } = await sb.from("plants").select("*").eq("garden_id", g.id);
     setPlants((plantsData||[]).map(mapPlant));
-
-    // Load tasks
     const { data: tasksData } = await sb.from("tasks").select("*").eq("garden_id", g.id);
     setTasks((tasksData||[]).map(mapTask));
-
+    // Load property chores
+    const { data: choresData } = await sb.from("property_chores").select("*").eq("garden_id", g.id);
+    setChores((choresData||[]).map(mapChore));
     setLoading(false);
   }
 
   async function toggleDone(taskId) {
     const task = tasks.find(t=>t.id===taskId);
     if (!task) return;
-
     if (task.done) {
-      // Uncomplete
       const { error } = await sb.from("tasks").update({ completed_at:null, completed_by:null, completed_by_name:null }).eq("id",taskId);
       if (!error) setTasks(ts=>ts.map(t=>t.id===taskId?{...t,done:false,doneBy:null,doneAt:null}:t));
     } else {
-      // Complete
       const { error } = await sb.from("tasks").update({ completed_at:new Date().toISOString(), completed_by:authUser.id, completed_by_name:dispName }).eq("id",taskId);
       if (!error) {
         setTasks(ts=>ts.map(t=>t.id===taskId?{...t,done:true,doneBy:dispName,doneAt:TODAY}:t));
-        // Spawn next recurring task
         if (task.recur) {
           const nextDate = addDays(task.dueDate, Number(task.recur));
-          const recurMonths = Math.round(Number(task.recur)/30);
           const { data: next } = await sb.from("tasks").insert({
             plant_id:task.plantId, garden_id:task.gardenId||garden.id,
             task_type:task.type, due_date:nextDate,
-            recurrence_months:recurMonths, notes:task.note,
+            recurrence_months:Math.round(Number(task.recur)/30), notes:task.note,
           }).select().single();
           if (next) setTasks(ts=>[...ts, mapTask(next)]);
         }
@@ -1016,21 +1327,50 @@ export default function App() {
     }
   }
 
+  async function toggleChoreDone(choreId) {
+    const chore = chores.find(c=>c.id===choreId);
+    if (!chore) return;
+    if (chore.done) {
+      const { error } = await sb.from("property_chores").update({ completed_at:null, completed_by:null, completed_by_name:null }).eq("id",choreId);
+      if (!error) setChores(cs=>cs.map(c=>c.id===choreId?{...c,done:false,doneBy:null,doneAt:null}:c));
+    } else {
+      const { error } = await sb.from("property_chores").update({ completed_at:new Date().toISOString(), completed_by:authUser.id, completed_by_name:dispName }).eq("id",choreId);
+      if (!error) {
+        setChores(cs=>cs.map(c=>c.id===choreId?{...c,done:true,doneBy:dispName,doneAt:TODAY}:c));
+        if (chore.recur) {
+          const nextDate = addDays(chore.dueDate, Number(chore.recur));
+          const { data: next } = await sb.from("property_chores").insert({
+            area_id:chore.areaId, garden_id:chore.gardenId||garden.id,
+            chore_type:chore.type, due_date:nextDate,
+            recurrence_days:Number(chore.recur), notes:chore.note,
+          }).select().single();
+          if (next) setChores(cs=>[...cs, mapChore(next)]);
+        }
+      }
+    }
+  }
+
   function openAddTask(plantId=null) { setTaskCtx(plantId); setModal("task"); }
 
-  async function signOut() { await sb.auth.signOut(); setGarden(null); setPlants([]); setTasks([]); }
+  async function signOut() { await sb.auth.signOut(); setGarden(null); setPlants([]); setTasks([]); setChores([]); }
 
-  const overdueCount = tasks.filter(t=>!t.done&&urgOf(t.dueDate,false)==="overdue").length;
+  const overdueGarden   = tasks.filter(t=>!t.done&&urgOf(t.dueDate,false)==="overdue").length;
+  const overdueProperty = chores.filter(c=>!c.done&&urgOf(c.dueDate,false)==="overdue").length;
 
-  const NAV = [
-    {id:"home",icon:"🌿",label:"Home"},
-    {id:"upcoming",icon:"📋",label:"Tasks"},
-    {id:"calendar",icon:"📅",label:"Calendar"},
-    {id:"plants",icon:"🌳",label:"Plants"},
-    {id:"settings",icon:"⚙️",label:"Settings"},
+  const GARDEN_NAV = [
+    {id:"home",     icon:"🌿", label:"Home"},
+    {id:"upcoming", icon:"📋", label:"Tasks"},
+    {id:"calendar", icon:"📅", label:"Calendar"},
+    {id:"plants",   icon:"🌳", label:"Plants"},
+    {id:"settings", icon:"⚙️", label:"Settings"},
+  ];
+  const PROP_NAV = [
+    {id:"prop-home",  icon:"🏡", label:"Property"},
+    {id:"prop-chores",icon:"📋", label:"All chores"},
   ];
 
-  // ── Render gates ──
+  const isPropScreen = screen.startsWith("prop-");
+
   if (!authReady) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh"}}><Spinner size={36}/></div>;
   if (!authUser)  return <><style>{CSS}</style><AuthScreen onAuth={setAuthUser}/></>;
   if (loading)    return <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh"}}><Spinner size={36}/></div>;
@@ -1043,39 +1383,58 @@ export default function App() {
       {/* ── Sidebar ── */}
       <nav className="sidebar">
         <div className="sidebar-logo">
-          <div style={{fontSize:30,marginBottom:6}}>🌿</div>
-          <div style={{fontSize:17,fontWeight:700,color:"#fff",lineHeight:1}}>Garden Tracker</div>
-          <div style={{fontSize:11,color:"#7DBE9A",marginTop:3}}>Dopamine Farm</div>
+          <div style={{fontSize:28,marginBottom:6}}>🌿</div>
+          <div style={{fontSize:16,fontWeight:700,color:"#fff",lineHeight:1}}>Dopamine Farm</div>
+          <div style={{fontSize:11,color:"#7DBE9A",marginTop:3}}>{dispName}</div>
         </div>
-        {NAV.map(n=>(
+
+        {/* Garden section */}
+        <div style={{padding:"6px 20px 4px",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.35)",letterSpacing:".1em",textTransform:"uppercase"}}>🌿 Garden</div>
+        {GARDEN_NAV.map(n=>(
           <button key={n.id} className={`nav-btn ${screen===n.id?"active":""}`} onClick={()=>setScreen(n.id)}>
             <span className="nav-icon">{n.icon}</span>
             <span className="nav-label">
               {n.label}
-              {n.id==="upcoming"&&overdueCount>0&&<span style={{marginLeft:6,fontSize:10,background:"#B84C4C",color:"#fff",padding:"1px 6px",borderRadius:20,fontWeight:700}}>{overdueCount}</span>}
+              {n.id==="upcoming"&&overdueGarden>0&&<span style={{marginLeft:6,fontSize:10,background:"#B84C4C",color:"#fff",padding:"1px 6px",borderRadius:20,fontWeight:700}}>{overdueGarden}</span>}
             </span>
           </button>
         ))}
-        {/* User pill at bottom of sidebar */}
+
+        {/* Property section */}
+        <hr style={{margin:"14px 20px",border:"none",borderTop:"1px solid rgba(255,255,255,.1)"}}/>
+        <div style={{padding:"2px 20px 4px",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.35)",letterSpacing:".1em",textTransform:"uppercase"}}>🏡 Property</div>
+        {PROP_NAV.map(n=>(
+          <button key={n.id} className={`nav-btn ${screen===n.id?"prop-active":""}`} onClick={()=>setScreen(n.id)}>
+            <span className="nav-icon">{n.icon}</span>
+            <span className="nav-label" style={{color:screen===n.id?"#D4A574":"#C4A882"}}>
+              {n.label}
+              {n.id==="prop-chores"&&overdueProperty>0&&<span style={{marginLeft:6,fontSize:10,background:"#B84C4C",color:"#fff",padding:"1px 6px",borderRadius:20,fontWeight:700}}>{overdueProperty}</span>}
+            </span>
+          </button>
+        ))}
+
+        {/* Sign out */}
         <div style={{marginTop:"auto",padding:"16px 20px 0",borderTop:"1px solid rgba(255,255,255,.1)"}}>
-          <div style={{fontSize:11,color:"#7DBE9A",fontWeight:700,letterSpacing:".06em",textTransform:"uppercase",marginBottom:6}}>Signed in as</div>
-          <div style={{fontSize:13,color:"#fff",fontWeight:700}}>{dispName}</div>
-          <button onClick={()=>{}} style={{marginTop:10,background:"rgba(255,255,255,.1)",border:"none",borderRadius:8,padding:"6px 12px",color:"#9DC4AF",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",width:"100%",textAlign:"left"}}
-            onClick={signOut}>Sign out</button>
+          <button onClick={signOut} style={{background:"rgba(255,255,255,.08)",border:"none",borderRadius:8,padding:"8px 12px",color:"#9DC4AF",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",width:"100%",textAlign:"left"}}>
+            Sign out
+          </button>
         </div>
       </nav>
 
       {/* ── Main content ── */}
-      <div className="screen">
-        {screen==="home"     && <HomeScreen     plants={plants} tasks={tasks} dispName={dispName} onToggle={toggleDone} onAddTask={openAddTask}/>}
-        {screen==="upcoming" && <UpcomingScreen plants={plants} tasks={tasks} onToggle={toggleDone}/>}
-        {screen==="calendar" && <CalendarScreen plants={plants} tasks={tasks} onToggle={toggleDone}/>}
-        {screen==="plants"   && <PlantsScreen   plants={plants} tasks={tasks} onAddPlant={()=>setModal("plant")} onAddTask={openAddTask}/>}
-        {screen==="settings" && <SettingsScreen user={authUser} garden={garden} members={members} dispName={dispName} onSignOut={signOut}/>}
+      <div className="screen" style={isPropScreen?{background:"linear-gradient(160deg,#EDE5D8 0%,#F5EDE0 50%,#EAE0CE 100%)"}:{}}>
+        {screen==="home"       && <HomeScreen         plants={plants} tasks={tasks} dispName={dispName} onToggle={toggleDone} onAddTask={openAddTask}/>}
+        {screen==="upcoming"   && <UpcomingScreen     plants={plants} tasks={tasks} onToggle={toggleDone}/>}
+        {screen==="calendar"   && <CalendarScreen     plants={plants} tasks={tasks} onToggle={toggleDone}/>}
+        {screen==="plants"     && <PlantsScreen       plants={plants} tasks={tasks} onAddPlant={()=>setModal("plant")} onAddTask={openAddTask}/>}
+        {screen==="settings"   && <SettingsScreen     user={authUser} garden={garden} members={members} dispName={dispName} onSignOut={signOut}/>}
+        {screen==="prop-home"  && <PropertyHomeScreen chores={chores} dispName={dispName} gardenId={garden.id} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")}/>}
+        {screen==="prop-chores"&& <PropertyChoresScreen chores={chores} onToggle={toggleChoreDone}/>}
       </div>
 
       {modal==="task"  && <AddTaskSheet  plants={plants} defaultPlantId={taskCtx} gardenId={garden.id} onSave={t=>setTasks(ts=>[...ts,t])} onClose={()=>setModal(null)}/>}
       {modal==="plant" && <AddPlantSheet gardenId={garden.id} onSave={p=>setPlants(ps=>[...ps,p])} onClose={()=>setModal(null)}/>}
+      {modal==="chore" && <AddChoreSheet gardenId={garden.id} onSave={c=>setChores(cs=>[...cs,c])} onClose={()=>setModal(null)}/>}
     </div>
   );
 }
