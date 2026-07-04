@@ -232,13 +232,14 @@ function RecChip({ recur }) {
   return <span className="rec-chip">🔄 {RECUR_SHORT[recur]||recur+"d"}</span>;
 }
 
-function TaskPill({ task, plant, onToggle }) {
+function TaskPill({ task, plant, onToggle, onEdit, onDelete }) {
   const urg = urgOf(task.dueDate, task.done);
   const cls = urg==="overdue"?"urgent":urg==="today"?"warn":"";
+  const [showActions, setShowActions] = useState(false);
   return (
-    <div className={`task-pill ${task.done?"done":""} ${cls}`}>
+    <div className={`task-pill ${task.done?"done":""} ${cls}`} style={{position:"relative"}}>
       <ChkCircle on={task.done} toggle={()=>onToggle(task.id)} />
-      <div style={{flex:1,minWidth:0}}>
+      <div style={{flex:1,minWidth:0}} onClick={()=>setShowActions(s=>!s)} style={{flex:1,minWidth:0,cursor:"pointer"}}>
         <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap",marginBottom:3}}>
           <span style={{fontSize:16}}>{plant?.emoji}</span>
           <span style={{fontWeight:700,fontSize:14,color:"#1E3A1E"}}>{plant?.name}</span>
@@ -251,6 +252,10 @@ function TaskPill({ task, plant, onToggle }) {
           {task.done && task.doneBy && <span style={{fontSize:11,color:"#3A7D5A",fontWeight:700}}>by {task.doneBy}</span>}
           {plant && <span style={{fontSize:11,color:"#A0B8A0"}}>{plant.loc}</span>}
         </div>
+      </div>
+      <div style={{display:"flex",gap:4,flexShrink:0}}>
+        <button onClick={()=>onEdit(task)} title="Edit" style={{background:"none",border:"none",cursor:"pointer",fontSize:14,padding:"4px",borderRadius:6,color:"#8FAD8F",transition:"color .15s"}} onMouseEnter={e=>e.target.style.color="#3A7D5A"} onMouseLeave={e=>e.target.style.color="#8FAD8F"}>✏️</button>
+        <button onClick={()=>onDelete(task.id)} title="Delete" style={{background:"none",border:"none",cursor:"pointer",fontSize:14,padding:"4px",borderRadius:6,color:"#8FAD8F",transition:"color .15s"}} onMouseEnter={e=>e.target.style.color="#B84C4C"} onMouseLeave={e=>e.target.style.color="#8FAD8F"}>🗑️</button>
       </div>
     </div>
   );
@@ -394,7 +399,7 @@ function GardenSetup({ user, onJoined }) {
 }
 
 // ─── HOME SCREEN ──────────────────────────────────────────────────────────────
-function HomeScreen({ plants, tasks, dispName, onToggle, onAddTask }) {
+function HomeScreen({ plants, tasks, dispName, onToggle, onAddTask, onEditTask, onDeleteTask }) {
   const [selCat, setSelCat] = useState(null);
   const plantById = useCallback(id=>plants.find(p=>p.id===id),[plants]);
 
@@ -494,7 +499,7 @@ function HomeScreen({ plants, tasks, dispName, onToggle, onAddTask }) {
                   <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:"#8B2E2E"}}>Overdue</div><div style={{fontSize:11,color:"#B84C4C",marginTop:1}}>{taskGroups.overdue.length} task{taskGroups.overdue.length!==1?"s":""} past due — do these first</div></div>
                   <div style={{fontWeight:700,fontSize:20,color:"#B84C4C"}}>{taskGroups.overdue.length}</div>
                 </div>
-                {taskGroups.overdue.map(t=><TaskPill key={t.id} task={t} plant={plantById(t.plantId)} onToggle={onToggle}/>)}
+                {taskGroups.overdue.map(t=><TaskPill key={t.id} task={t} plant={plantById(t.plantId)} onToggle={onToggle} onEdit={onEditTask} onDelete={onDeleteTask}/>)}
               </div>
             )}
             {taskGroups.today.length>0 && (
@@ -504,7 +509,7 @@ function HomeScreen({ plants, tasks, dispName, onToggle, onAddTask }) {
                   <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:"#7A5010"}}>Today</div><div style={{fontSize:11,color:"#B07B2A",marginTop:1}}>{taskGroups.today.length} task{taskGroups.today.length!==1?"s":""} due today</div></div>
                   <div style={{fontWeight:700,fontSize:20,color:"#B07B2A"}}>{taskGroups.today.length}</div>
                 </div>
-                {taskGroups.today.map(t=><TaskPill key={t.id} task={t} plant={plantById(t.plantId)} onToggle={onToggle}/>)}
+                {taskGroups.today.map(t=><TaskPill key={t.id} task={t} plant={plantById(t.plantId)} onToggle={onToggle} onEdit={onEditTask} onDelete={onDeleteTask}/>)}
               </div>
             )}
             {taskGroups.doneToday.length>0 && (
@@ -514,7 +519,7 @@ function HomeScreen({ plants, tasks, dispName, onToggle, onAddTask }) {
                   <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:"#1E5C38"}}>Done today</div><div style={{fontSize:11,color:"#3A7D5A",marginTop:1}}>{taskGroups.doneToday.length} completed — great work!</div></div>
                   <div style={{fontWeight:700,fontSize:20,color:"#3A7D5A"}}>{taskGroups.doneToday.length}</div>
                 </div>
-                {taskGroups.doneToday.map(t=><TaskPill key={t.id} task={t} plant={plantById(t.plantId)} onToggle={onToggle}/>)}
+                {taskGroups.doneToday.map(t=><TaskPill key={t.id} task={t} plant={plantById(t.plantId)} onToggle={onToggle} onEdit={onEditTask} onDelete={onDeleteTask}/>)}
               </div>
             )}
           </>)}
@@ -525,7 +530,7 @@ function HomeScreen({ plants, tasks, dispName, onToggle, onAddTask }) {
 }
 
 // ─── UPCOMING SCREEN ──────────────────────────────────────────────────────────
-function UpcomingScreen({ plants, tasks, onToggle }) {
+function UpcomingScreen({ plants, tasks, onToggle, onEditTask, onDeleteTask }) {
   const plantById = id=>plants.find(p=>p.id===id);
   const groups = useMemo(()=>{
     const g={overdue:[],today:[],week:[],upcoming:[]};
@@ -865,12 +870,13 @@ function SettingsScreen({ user, garden, members, dispName, onSignOut }) {
 }
 
 // ─── ADD TASK SHEET ───────────────────────────────────────────────────────────
-function AddTaskSheet({ plants, defaultPlantId, gardenId, onSave, onClose }) {
-  const [plantId,setPlantId]=useState(defaultPlantId?String(defaultPlantId):"");
-  const [type,setType]=useState("Harvest");
-  const [due,setDue]=useState(TODAY);
-  const [note,setNote]=useState("");
-  const [recur,setRecur]=useState("");
+function AddTaskSheet({ plants, defaultPlantId, gardenId, onSave, onClose, editTask, onUpdate, onDelete }) {
+  const isEdit = !!editTask;
+  const [plantId,setPlantId]=useState(isEdit?String(editTask.plantId):(defaultPlantId?String(defaultPlantId):""));
+  const [type,setType]=useState(isEdit?editTask.type:"Harvest");
+  const [due,setDue]=useState(isEdit?editTask.dueDate:TODAY);
+  const [note,setNote]=useState(isEdit?editTask.note:"");
+  const [recur,setRecur]=useState(isEdit?editTask.recur:"");
   const [saving,setSaving]=useState(false);
   const [err,setErr]=useState("");
 
@@ -878,21 +884,35 @@ function AddTaskSheet({ plants, defaultPlantId, gardenId, onSave, onClose }) {
     if(!plantId) return;
     setSaving(true); setErr("");
     const recurMonths = recur ? Math.round(Number(recur)/30) : null;
-    const { data, error } = await sb.from("tasks").insert({
-      plant_id: plantId, garden_id: gardenId,
-      task_type: type, due_date: due,
-      recurrence_months: recurMonths, notes: note,
-    }).select().single();
-    if (error) { setErr(error.message); setSaving(false); return; }
-    onSave(mapTask(data));
-    onClose();
+    if (isEdit) {
+      const { data, error } = await sb.from("tasks").update({
+        plant_id:plantId, task_type:type, due_date:due, recurrence_months:recurMonths, notes:note,
+      }).eq("id",editTask.id).select().single();
+      if (error) { setErr(error.message); setSaving(false); return; }
+      onUpdate(mapTask(data)); onClose();
+    } else {
+      const { data, error } = await sb.from("tasks").insert({
+        plant_id:plantId, garden_id:gardenId, task_type:type, due_date:due, recurrence_months:recurMonths, notes:note,
+      }).select().single();
+      if (error) { setErr(error.message); setSaving(false); return; }
+      onSave(mapTask(data)); onClose();
+    }
+  }
+
+  async function del() {
+    if (!window.confirm("Delete this task?")) return;
+    await sb.from("tasks").delete().eq("id",editTask.id);
+    onDelete(editTask.id); onClose();
   }
 
   return (
     <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="sheet">
         <div className="sheet-handle"/>
-        <div style={{fontWeight:700,fontSize:20,color:"#1E3A1E",marginBottom:20}}>Add task</div>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+          <div style={{fontWeight:700,fontSize:20,color:"#1E3A1E"}}>{isEdit?"Edit task":"Add task"}</div>
+          {isEdit&&<button onClick={del} style={{background:"rgba(184,76,76,.1)",border:"none",borderRadius:8,padding:"6px 12px",color:"#B84C4C",fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:13}}>🗑️ Delete</button>}
+        </div>
         {err&&<div className="err">{err}</div>}
         <div className="field">
           <label>Plant</label>
@@ -919,7 +939,7 @@ function AddTaskSheet({ plants, defaultPlantId, gardenId, onSave, onClose }) {
         <div style={{display:"flex",gap:10,marginTop:4}}>
           <button onClick={onClose} className="big-btn" style={{background:"rgba(0,0,0,.07)",color:"#6B8F6B",flex:1}}>Cancel</button>
           <button onClick={save} disabled={!plantId||saving} className="big-btn big-btn-green" style={{flex:2,opacity:plantId?1:.45}}>
-            {saving?<Spinner/>:"Save task"}
+            {saving?<Spinner/>:isEdit?"Save changes":"Save task"}
           </button>
         </div>
       </div>
@@ -984,7 +1004,7 @@ function mapChore(r) {
 }
 
 // ─── PROPERTY CHORE PILL ─────────────────────────────────────────────────────
-function ChorePill({ chore, area, onToggle }) {
+function ChorePill({ chore, area, onToggle, onEdit, onDelete }) {
   const urg = urgOf(chore.dueDate, chore.done);
   const cls = urg==="overdue"?"urgent":urg==="today"?"warn":"";
   const c = PROP_TYPE_COLOR[chore.type]||"#7A5C3A";
@@ -1006,12 +1026,18 @@ function ChorePill({ chore, area, onToggle }) {
           {chore.done&&chore.doneBy&&<span style={{fontSize:11,color:"#7A5C3A",fontWeight:700}}>by {chore.doneBy}</span>}
         </div>
       </div>
+      {onEdit&&onDelete&&(
+        <div style={{display:"flex",gap:4,flexShrink:0}}>
+          <button onClick={()=>onEdit(chore)} title="Edit" style={{background:"none",border:"none",cursor:"pointer",fontSize:14,padding:"4px",borderRadius:6,color:"#9A8A70",transition:"color .15s"}} onMouseEnter={e=>e.target.style.color="#7A5C3A"} onMouseLeave={e=>e.target.style.color="#9A8A70"}>✏️</button>
+          <button onClick={()=>onDelete(chore.id)} title="Delete" style={{background:"none",border:"none",cursor:"pointer",fontSize:14,padding:"4px",borderRadius:6,color:"#9A8A70",transition:"color .15s"}} onMouseEnter={e=>e.target.style.color="#B84C4C"} onMouseLeave={e=>e.target.style.color="#9A8A70"}>🗑️</button>
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── PROPERTY HOME SCREEN ─────────────────────────────────────────────────────
-function PropertyHomeScreen({ areas, chores, dispName, gardenId, onToggle, onAddChore }) {
+function PropertyHomeScreen({ areas, chores, dispName, gardenId, onToggle, onAddChore, onEditChore, onDeleteChore }) {
   const [selArea, setSelArea] = useState(null);
   const areaById = id => PROP_AREAS.find(a=>a.id===id);
 
@@ -1113,7 +1139,7 @@ function PropertyHomeScreen({ areas, chores, dispName, gardenId, onToggle, onAdd
                   <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:"#8B2E2E"}}>Overdue</div><div style={{fontSize:11,color:"#B84C4C",marginTop:1}}>{choreGroups.overdue.length} chore{choreGroups.overdue.length!==1?"s":""} past due</div></div>
                   <div style={{fontWeight:700,fontSize:20,color:"#B84C4C"}}>{choreGroups.overdue.length}</div>
                 </div>
-                {choreGroups.overdue.map(c=><ChorePill key={c.id} chore={c} area={areaById(c.areaId)} onToggle={onToggle}/>)}
+                {choreGroups.overdue.map(c=><ChorePill key={c.id} chore={c} area={areaById(c.areaId)} onToggle={onToggle} onEdit={onEditChore} onDelete={onDeleteChore}/>)}
               </div>
             )}
             {choreGroups.today.length>0&&(
@@ -1123,7 +1149,7 @@ function PropertyHomeScreen({ areas, chores, dispName, gardenId, onToggle, onAdd
                   <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:"#7A5010"}}>Today</div><div style={{fontSize:11,color:"#B07B2A",marginTop:1}}>{choreGroups.today.length} chore{choreGroups.today.length!==1?"s":""} due today</div></div>
                   <div style={{fontWeight:700,fontSize:20,color:"#B07B2A"}}>{choreGroups.today.length}</div>
                 </div>
-                {choreGroups.today.map(c=><ChorePill key={c.id} chore={c} area={areaById(c.areaId)} onToggle={onToggle}/>)}
+                {choreGroups.today.map(c=><ChorePill key={c.id} chore={c} area={areaById(c.areaId)} onToggle={onToggle} onEdit={onEditChore} onDelete={onDeleteChore}/>)}
               </div>
             )}
             {choreGroups.doneToday.length>0&&(
@@ -1133,7 +1159,7 @@ function PropertyHomeScreen({ areas, chores, dispName, gardenId, onToggle, onAdd
                   <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:"#4A3010"}}>Done today</div><div style={{fontSize:11,color:"#7A5C3A",marginTop:1}}>{choreGroups.doneToday.length} completed — nice work!</div></div>
                   <div style={{fontWeight:700,fontSize:20,color:"#7A5C3A"}}>{choreGroups.doneToday.length}</div>
                 </div>
-                {choreGroups.doneToday.map(c=><ChorePill key={c.id} chore={c} area={areaById(c.areaId)} onToggle={onToggle}/>)}
+                {choreGroups.doneToday.map(c=><ChorePill key={c.id} chore={c} area={areaById(c.areaId)} onToggle={onToggle} onEdit={onEditChore} onDelete={onDeleteChore}/>)}
               </div>
             )}
           </>)}
@@ -1144,7 +1170,7 @@ function PropertyHomeScreen({ areas, chores, dispName, gardenId, onToggle, onAdd
 }
 
 // ─── ALL PROPERTY CHORES SCREEN ───────────────────────────────────────────────
-function PropertyChoresScreen({ chores, onToggle, onAddChore }) {
+function PropertyChoresScreen({ chores, onToggle, onAddChore, onEditChore, onDeleteChore }) {
   const areaById = id => PROP_AREAS.find(a=>a.id===id);
   const [filter, setFilter] = useState("active");
 
@@ -1184,7 +1210,7 @@ function PropertyChoresScreen({ chores, onToggle, onAddChore }) {
             <span style={{fontSize:13,fontWeight:700,color:s.color}}>{s.label}</span>
             <span style={{fontSize:12,color:"#9A8A70",marginLeft:8}}>{groups[s.key].length} chore{groups[s.key].length!==1?"s":""}</span>
           </div>
-          {groups[s.key].map(c=><ChorePill key={c.id} chore={c} area={areaById(c.areaId)} onToggle={onToggle}/>)}
+          {groups[s.key].map(c=><ChorePill key={c.id} chore={c} area={areaById(c.areaId)} onToggle={onToggle} onEdit={onEditChore} onDelete={onDeleteChore}/>)}
         </div>
       ))}
     </div>
@@ -1192,32 +1218,49 @@ function PropertyChoresScreen({ chores, onToggle, onAddChore }) {
 }
 
 // ─── ADD CHORE SHEET ──────────────────────────────────────────────────────────
-function AddChoreSheet({ gardenId, onSave, onClose }) {
-  const [areaId, setAreaId] = useState("paddocks");
-  const [type,   setType]   = useState("Mow");
-  const [due,    setDue]    = useState(TODAY);
-  const [note,   setNote]   = useState("");
-  const [recur,  setRecur]  = useState("");
+function AddChoreSheet({ gardenId, onSave, onClose, editChore, onUpdate, onDelete }) {
+  const isEdit = !!editChore;
+  const [areaId, setAreaId] = useState(isEdit?editChore.areaId:"house");
+  const [type,   setType]   = useState(isEdit?editChore.type:"Mow");
+  const [due,    setDue]    = useState(isEdit?editChore.dueDate:TODAY);
+  const [note,   setNote]   = useState(isEdit?editChore.note:"");
+  const [recur,  setRecur]  = useState(isEdit?editChore.recur:"");
   const [saving, setSaving] = useState(false);
   const [err,    setErr]    = useState("");
 
   async function save() {
     setSaving(true); setErr("");
-    const { data, error } = await sb.from("property_chores").insert({
-      garden_id: gardenId, area_id: areaId,
-      chore_type: type, due_date: due,
-      recurrence_days: recur ? Number(recur) : null, notes: note,
-    }).select().single();
-    if (error) { setErr(error.message); setSaving(false); return; }
-    onSave(mapChore(data));
-    onClose();
+    if (isEdit) {
+      const { data, error } = await sb.from("property_chores").update({
+        area_id:areaId, chore_type:type, due_date:due,
+        recurrence_days:recur?Number(recur):null, notes:note,
+      }).eq("id",editChore.id).select().single();
+      if (error) { setErr(error.message); setSaving(false); return; }
+      onUpdate(mapChore(data)); onClose();
+    } else {
+      const { data, error } = await sb.from("property_chores").insert({
+        garden_id:gardenId, area_id:areaId, chore_type:type, due_date:due,
+        recurrence_days:recur?Number(recur):null, notes:note,
+      }).select().single();
+      if (error) { setErr(error.message); setSaving(false); return; }
+      onSave(mapChore(data)); onClose();
+    }
+  }
+
+  async function del() {
+    if (!window.confirm("Delete this chore?")) return;
+    await sb.from("property_chores").delete().eq("id",editChore.id);
+    onDelete(editChore.id); onClose();
   }
 
   return (
     <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="sheet" style={{background:"linear-gradient(180deg,#F5EDE0 0%,#EAE0CE 100%)"}}>
         <div className="sheet-handle"/>
-        <div style={{fontWeight:700,fontSize:20,color:"#2D1F0A",marginBottom:20}}>Add property chore</div>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+          <div style={{fontWeight:700,fontSize:20,color:"#2D1F0A"}}>{isEdit?"Edit chore":"Add property chore"}</div>
+          {isEdit&&<button onClick={del} style={{background:"rgba(184,76,76,.1)",border:"none",borderRadius:8,padding:"6px 12px",color:"#B84C4C",fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:13}}>🗑️ Delete</button>}
+        </div>
         {err&&<div className="err">{err}</div>}
         <div className="field">
           <label>Area</label>
@@ -1251,7 +1294,7 @@ function AddChoreSheet({ gardenId, onSave, onClose }) {
         <div style={{display:"flex",gap:10,marginTop:4}}>
           <button onClick={onClose} className="big-btn" style={{background:"rgba(0,0,0,.07)",color:"#8A7A5A",flex:1}}>Cancel</button>
           <button onClick={save} disabled={saving} className="big-btn big-btn-brown" style={{flex:2}}>
-            {saving?<Spinner/>:"Save chore"}
+            {saving?<Spinner/>:isEdit?"Save changes":"Save chore"}
           </button>
         </div>
       </div>
@@ -1329,7 +1372,7 @@ function PropertyCalendarScreen({ chores, onToggle }) {
           </div>
           {selChores.length===0
             ?<div style={{color:"#9A8A70",fontSize:13,textAlign:"center",padding:"12px 0"}}>Nothing scheduled</div>
-            :selChores.map(c=><ChorePill key={c.id} chore={c} area={areaById(c.areaId)} onToggle={onToggle}/>)
+            :selChores.map(c=><ChorePill key={c.id} chore={c} area={areaById(c.areaId)} onToggle={onToggle} onEdit={onEditChore} onDelete={onDeleteChore}/>)
           }
         </div>
       )}
@@ -1338,7 +1381,7 @@ function PropertyCalendarScreen({ chores, onToggle }) {
 }
 
 // ─── PROPERTY AREAS SCREEN ────────────────────────────────────────────────────
-function PropertyAreasScreen({ chores, onToggle, onAddChore }) {
+function PropertyAreasScreen({ chores, onToggle, onAddChore, onEditChore, onDeleteChore }) {
   const [openAreas, setOpenAreas] = useState({});
   const toggleArea = id => setOpenAreas(o=>({...o,[id]:!o[id]}));
 
@@ -1400,15 +1443,15 @@ function PropertyAreasScreen({ chores, onToggle, onAddChore }) {
             {isOpen&&areaChores.length>0&&(
               <div style={{paddingLeft:8}}>
                 {/* Overdue */}
-                {active.filter(c=>urgOf(c.dueDate,false)==="overdue").map(c=><ChorePill key={c.id} chore={c} area={area} onToggle={onToggle}/>)}
+                {active.filter(c=>urgOf(c.dueDate,false)==="overdue").map(c=><ChorePill key={c.id} chore={c} area={area} onToggle={onToggle} onEdit={onEditChore} onDelete={onDeleteChore}/>)}
                 {/* Today */}
-                {active.filter(c=>urgOf(c.dueDate,false)==="today").map(c=><ChorePill key={c.id} chore={c} area={area} onToggle={onToggle}/>)}
+                {active.filter(c=>urgOf(c.dueDate,false)==="today").map(c=><ChorePill key={c.id} chore={c} area={area} onToggle={onToggle} onEdit={onEditChore} onDelete={onDeleteChore}/>)}
                 {/* This week */}
-                {active.filter(c=>urgOf(c.dueDate,false)==="week").map(c=><ChorePill key={c.id} chore={c} area={area} onToggle={onToggle}/>)}
+                {active.filter(c=>urgOf(c.dueDate,false)==="week").map(c=><ChorePill key={c.id} chore={c} area={area} onToggle={onToggle} onEdit={onEditChore} onDelete={onDeleteChore}/>)}
                 {/* Upcoming */}
-                {active.filter(c=>urgOf(c.dueDate,false)==="upcoming").map(c=><ChorePill key={c.id} chore={c} area={area} onToggle={onToggle}/>)}
+                {active.filter(c=>urgOf(c.dueDate,false)==="upcoming").map(c=><ChorePill key={c.id} chore={c} area={area} onToggle={onToggle} onEdit={onEditChore} onDelete={onDeleteChore}/>)}
                 {/* Done (dimmed) */}
-                {done.slice(0,3).map(c=><ChorePill key={c.id} chore={c} area={area} onToggle={onToggle}/>)}
+                {done.slice(0,3).map(c=><ChorePill key={c.id} chore={c} area={area} onToggle={onToggle} onEdit={onEditChore} onDelete={onDeleteChore}/>)}
                 {done.length>3&&<div style={{fontSize:12,color:"#9A8A70",padding:"4px 16px"}}>+ {done.length-3} more completed</div>}
               </div>
             )}
@@ -1439,6 +1482,8 @@ export default function App() {
   const [screen,    setScreen]    = useState("home");
   const [modal,     setModal]     = useState(null);
   const [taskCtx,   setTaskCtx]   = useState(null);
+  const [editTask,  setEditTask]  = useState(null);
+  const [editChore, setEditChore] = useState(null);
 
   // ── Auth listener ──
   useEffect(()=>{
@@ -1522,7 +1567,14 @@ export default function App() {
     }
   }
 
-  function openAddTask(plantId=null) { setTaskCtx(plantId); setModal("task"); }
+  function openAddTask(plantId=null) { setEditTask(null); setTaskCtx(plantId); setModal("task"); }
+  function openEditTask(task) { setEditTask(task); setModal("task"); }
+  function openEditChore(chore) { setEditChore(chore); setModal("chore"); }
+
+  function updateTask(updated) { setTasks(ts=>ts.map(t=>t.id===updated.id?updated:t)); }
+  function deleteTask(id)      { setTasks(ts=>ts.filter(t=>t.id!==id)); }
+  function updateChore(updated){ setChores(cs=>cs.map(c=>c.id===updated.id?updated:c)); }
+  function deleteChore(id)     { setChores(cs=>cs.filter(c=>c.id!==id)); }
 
   async function signOut() { await sb.auth.signOut(); setGarden(null); setPlants([]); setTasks([]); setChores([]); }
 
@@ -1602,20 +1654,20 @@ export default function App() {
 
       {/* ── Main content ── */}
       <div className="screen" style={isPropScreen?{background:"linear-gradient(160deg,#EDE5D8 0%,#F5EDE0 50%,#EAE0CE 100%)"}:{}}>
-        {screen==="home"       && <HomeScreen         plants={plants} tasks={tasks} dispName={dispName} onToggle={toggleDone} onAddTask={openAddTask}/>}
-        {screen==="upcoming"   && <UpcomingScreen     plants={plants} tasks={tasks} onToggle={toggleDone}/>}
+        {screen==="home"       && <HomeScreen         plants={plants} tasks={tasks} dispName={dispName} onToggle={toggleDone} onAddTask={openAddTask} onEditTask={openEditTask} onDeleteTask={deleteTask}/>}
+        {screen==="upcoming"   && <UpcomingScreen     plants={plants} tasks={tasks} onToggle={toggleDone} onEditTask={openEditTask} onDeleteTask={deleteTask}/>}
         {screen==="calendar"   && <CalendarScreen     plants={plants} tasks={tasks} onToggle={toggleDone}/>}
-        {screen==="plants"     && <PlantsScreen       plants={plants} tasks={tasks} onAddPlant={()=>setModal("plant")} onAddTask={openAddTask}/>}
+        {screen==="plants"     && <PlantsScreen       plants={plants} tasks={tasks} onAddPlant={()=>setModal("plant")} onAddTask={openAddTask} onEditTask={openEditTask} onDeleteTask={deleteTask}/>}
         {screen==="settings"   && <SettingsScreen     user={authUser} garden={garden} members={members} dispName={dispName} onSignOut={signOut}/>}
-        {screen==="prop-home"    && <PropertyHomeScreen    chores={chores} dispName={dispName} gardenId={garden.id} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")}/>}
-        {screen==="prop-tasks"   && <PropertyChoresScreen  chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")}/>}
+        {screen==="prop-home"    && <PropertyHomeScreen    chores={chores} dispName={dispName} gardenId={garden.id} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
+        {screen==="prop-tasks"   && <PropertyChoresScreen  chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
         {screen==="prop-calendar"&& <PropertyCalendarScreen chores={chores} onToggle={toggleChoreDone}/>}
-        {screen==="prop-areas"   && <PropertyAreasScreen   chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")}/>}
+        {screen==="prop-areas"   && <PropertyAreasScreen   chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
       </div>
 
-      {modal==="task"  && <AddTaskSheet  plants={plants} defaultPlantId={taskCtx} gardenId={garden.id} onSave={t=>setTasks(ts=>[...ts,t])} onClose={()=>setModal(null)}/>}
+      {modal==="task"  && <AddTaskSheet  plants={plants} defaultPlantId={taskCtx} gardenId={garden.id} onSave={t=>setTasks(ts=>[...ts,t])} onClose={()=>{setModal(null);setEditTask(null);}} editTask={editTask} onUpdate={updateTask} onDelete={deleteTask}/>}
       {modal==="plant" && <AddPlantSheet gardenId={garden.id} onSave={p=>setPlants(ps=>[...ps,p])} onClose={()=>setModal(null)}/>}
-      {modal==="chore" && <AddChoreSheet gardenId={garden.id} onSave={c=>setChores(cs=>[...cs,c])} onClose={()=>setModal(null)}/>}
+      {modal==="chore" && <AddChoreSheet gardenId={garden.id} onSave={c=>setChores(cs=>[...cs,c])} onClose={()=>{setModal(null);setEditChore(null);}} editChore={editChore} onUpdate={updateChore} onDelete={deleteChore}/>}
     </div>
   );
 }
