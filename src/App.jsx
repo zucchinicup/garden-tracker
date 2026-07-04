@@ -268,10 +268,13 @@ function AuthScreen({ onAuth }) {
 
   async function signInWithGoogle() {
     setLoading(true); setErr("");
-    const { error } = await sb.auth.signInWithOAuth({
-      provider:"google",
-      options:{ redirectTo: window.location.href }
-    });
+   const { error } = await sb.auth.signInWithOAuth({
+  provider:"google",
+  options:{
+    redirectTo: "https://garden-tracker-indol.vercel.app",
+    skipBrowserRedirect: false,
+  }
+});
     if (error) { setErr(error.message); setLoading(false); }
   }
 
