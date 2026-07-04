@@ -40,7 +40,7 @@ const CSS = `
   @media (max-width: 768px) {
     .shell     { flex-direction:column; }
     .sidebar   { display:none; }
-    .screen    { margin-left:0; padding:20px 16px 40px; }
+    .screen    { margin-left:0; padding:20px 16px 40px; padding-left:66px; }
     .home-grid { grid-template-columns:1fr; gap:20px; }
     .two-col   { grid-template-columns:1fr; }
     .three-col { grid-template-columns:1fr 1fr; }
@@ -53,7 +53,7 @@ const CSS = `
   }
 
   /* ── Mobile floating hamburger ── */
-  .mob-hamburger-float { position:fixed; top:16px; right:16px; z-index:60; background:#1B3A2D; border:none; border-radius:10px; cursor:pointer; display:flex; flex-direction:column; gap:5px; padding:10px 11px; box-shadow:0 2px 12px rgba(0,0,0,.2); }
+  .mob-hamburger-float { position:fixed; top:16px; left:16px; z-index:60; background:#1B3A2D; border:none; border-radius:10px; cursor:pointer; display:flex; flex-direction:column; gap:5px; padding:10px 11px; box-shadow:0 2px 12px rgba(0,0,0,.2); }
   .mob-hamburger-float span { display:block; width:20px; height:2.5px; background:#fff; border-radius:2px; }
 
   /* ── Drawer ── */
@@ -131,6 +131,14 @@ const CSS = `
   .spin { animation:spin 1s linear infinite; }
   .err { background:#FDECEA; border:1.5px solid rgba(184,76,76,.3); border-radius:10px; padding:10px 14px; font-size:13px; color:#8B2E2E; margin-bottom:14px; }
 
+  /* ── Personal Projects ── */
+  .proj-pill  { display:flex; align-items:flex-start; gap:12px; padding:14px 16px; border-radius:16px; background:rgba(255,255,255,.8); border:1.5px solid rgba(255,255,255,.95); margin-bottom:10px; transition:background .15s; }
+  .proj-pill:hover { background:rgba(255,255,255,.95); }
+  .proj-pill.done { opacity:.45; }
+  .chk-proj { width:22px; height:22px; border-radius:6px; border:2.5px solid #C5C0D0; background:transparent; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .2s; margin-top:1px; }
+  .proj-priority { display:inline-block; padding:1px 8px; border-radius:20px; font-size:10px; font-weight:700; }
+  .nav-btn.proj-active { background:rgba(255,255,255,.08); }
+
   /* ── Property module — earthy brown & tan ── */
   body.prop-mode { background: linear-gradient(160deg, #EDE5D8 0%, #F5EDE0 50%, #EAE0CE 100%); }
   .prop-screen   { background: linear-gradient(160deg, #EDE5D8 0%, #F5EDE0 50%, #EAE0CE 100%); min-height:100%; }
@@ -188,6 +196,15 @@ const PROP_AREAS = [
   { id:"general",   label:"General",       emoji:"🔧", color:"#5A5A7A", light:"rgba(90,90,122,.1)"   },
 ];
 const PROP_CHORE_TYPES = ["Mow","Slash","Whipper Snip","Fence Check","Repair","Water Tank","Pump Check","Irrigation","Clean","Inspect","Other"];
+
+// ─── Personal Projects constants ───────────────────────────────────────────────
+const PROJ_MEMBERS = [
+  { id:"ange", label:"Ange's Projects", emoji:"🌸", color:"#C0547A", light:"rgba(192,84,122,.08)", accent:"#E8A0B8" },
+  { id:"jake", label:"Jake's Projects", emoji:"💜", color:"#6B4FA0", light:"rgba(107,79,160,.08)", accent:"#B09DD4" },
+  { id:"ben",  label:"Ben's Projects",  emoji:"🔵", color:"#3A6FA0", light:"rgba(58,111,160,.08)", accent:"#85B4D8" },
+];
+const PROJ_PRIORITY = ["Low","Medium","High","Urgent"];
+const PROJ_PRIORITY_COLOR = { Low:"#8FAD8F", Medium:"#B07B2A", High:"#C0547A", Urgent:"#B84C4C" };
 const PROP_TYPE_EMOJI  = { "Mow":"🌿","Slash":"⚔️","Whipper Snip":"✂️","Fence Check":"🪵","Repair":"🔧","Water Tank":"💧","Pump Check":"⚙️","Irrigation":"🚿","Clean":"🧹","Inspect":"👁️","Other":"📝" };
 const PROP_TYPE_COLOR  = { "Mow":"#5A7A3A","Slash":"#7A5A3A","Whipper Snip":"#6A5A3A","Fence Check":"#7A5C3A","Repair":"#8A4A2A","Water Tank":"#4A7A8A","Pump Check":"#5A6A7A","Irrigation":"#3A6A8A","Clean":"#6A6A5A","Inspect":"#5A5A7A","Other":"#7A7A5A" };
 
@@ -1501,6 +1518,223 @@ function PropertyAreasScreen({ chores, onToggle, onAddChore, onEditChore, onDele
   );
 }
 
+
+// ─── Map project task rows ────────────────────────────────────────────────────
+function mapProject(r) {
+  return {
+    id:r.id, memberId:r.member_id, gardenId:r.garden_id,
+    title:r.title, notes:r.notes||"", priority:r.priority||"Medium",
+    dueDate:r.due_date, done:!!r.completed_at,
+    doneAt:r.completed_at?r.completed_at.slice(0,10):null,
+    createdAt:r.created_at,
+  };
+}
+
+// ─── PROJECT TASK PILL ────────────────────────────────────────────────────────
+function ProjectPill({ task, member, onToggle, onEdit, onDelete }) {
+  const urg = task.dueDate ? urgOf(task.dueDate, task.done) : "upcoming";
+  const pc = PROJ_PRIORITY_COLOR[task.priority]||"#8FAD8F";
+  return (
+    <div className={`proj-pill ${task.done?"done":""}`} style={{borderColor:member.color+"22"}}>
+      <button className="chk-proj" onClick={()=>onToggle(task.id)}
+        style={{borderColor:task.done?member.color:"#C5C0D0", background:task.done?member.color:"transparent"}}>
+        {task.done&&<svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.5 7l3 3 5-5.5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>}
+      </button>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontWeight:700,fontSize:14,color:"#1A1A2E",marginBottom:4,textDecoration:task.done?"line-through":"none"}}>{task.title}</div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+          <span className="proj-priority" style={{background:pc+"18",color:pc,border:`1.5px solid ${pc}33`}}>{task.priority}</span>
+          {task.dueDate&&<span style={{fontSize:11,color:URG_COLOR[urg]||"#8FAD8F",fontWeight:700}}>{fmtDate(task.dueDate)}</span>}
+          {task.notes&&<span style={{fontSize:11,color:"#9090A0",fontStyle:"italic"}}>— {task.notes}</span>}
+        </div>
+      </div>
+      <div style={{display:"flex",gap:2,flexShrink:0}}>
+        <button onClick={()=>onEdit(task)} style={{background:"none",border:"none",cursor:"pointer",fontSize:13,padding:"4px",color:"#B0B0C0"}} onMouseEnter={e=>e.target.style.color=member.color} onMouseLeave={e=>e.target.style.color="#B0B0C0"}>✏️</button>
+        <button onClick={()=>onDelete(task.id)} style={{background:"none",border:"none",cursor:"pointer",fontSize:13,padding:"4px",color:"#B0B0C0"}} onMouseEnter={e=>e.target.style.color="#B84C4C"} onMouseLeave={e=>e.target.style.color="#B0B0C0"}>🗑️</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── PERSONAL PROJECTS HOME ───────────────────────────────────────────────────
+function PersonalProjectsScreen({ projects, gardenId, onToggle, onAdd, onEdit, onDelete }) {
+  const [openMembers, setOpenMembers] = useState({ange:true,jake:true,ben:true});
+  const [filter, setFilter] = useState("active"); // active | all | done
+
+  const byMember = memberId => projects
+    .filter(p => p.memberId===memberId && (filter==="all"?true:filter==="done"?p.done:!p.done))
+    .sort((a,b)=>{
+      const po={Urgent:0,High:1,Medium:2,Low:3};
+      if(a.done!==b.done) return a.done?1:-1;
+      return (po[a.priority]??2)-(po[b.priority]??2);
+    });
+
+  const toggle = id => setOpenMembers(o=>({...o,[id]:!o[id]}));
+
+  return (
+    <div className="fade-up" style={{paddingTop:0}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+        <div>
+          <div style={{fontSize:22,fontWeight:700,color:"#1A1A2E",marginBottom:4}}>Personal Projects</div>
+          <div style={{fontSize:13,color:"#9090A0"}}>{projects.filter(p=>!p.done).length} active tasks</div>
+        </div>
+        <div style={{display:"flex",gap:6}}>
+          {["active","all","done"].map(f=>(
+            <button key={f} onClick={()=>setFilter(f)}
+              style={{padding:"6px 12px",borderRadius:20,fontFamily:"inherit",fontSize:12,fontWeight:700,border:"none",cursor:"pointer",
+                background:filter===f?"#6B4FA0":"rgba(0,0,0,.06)",color:filter===f?"#fff":"#6B6B8A",transition:"all .15s",textTransform:"capitalize"}}>
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {PROJ_MEMBERS.map(member=>{
+        const tasks = byMember(member.id);
+        const allTasks = projects.filter(p=>p.memberId===member.id);
+        const done = allTasks.filter(p=>p.done).length;
+        const pct = allTasks.length===0?100:Math.round((done/allTasks.length)*100);
+        const isOpen = openMembers[member.id]!==false;
+
+        return (
+          <div key={member.id} style={{marginBottom:16}}>
+            {/* Member header */}
+            <button onClick={()=>toggle(member.id)}
+              style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",
+                padding:"14px 18px",borderRadius:16,background:member.light,
+                border:`1.5px solid ${member.color}22`,cursor:"pointer",fontFamily:"inherit",marginBottom:isOpen?8:0}}>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                <Ring pct={pct} size={44} sw={4} color={member.color} bg={member.accent+"44"}>
+                  <text x="50%" y="50%" textAnchor="middle" dy=".35em" fontSize="15" fontFamily="sans-serif">{member.emoji}</text>
+                </Ring>
+                <div style={{textAlign:"left"}}>
+                  <div style={{fontWeight:700,fontSize:15,color:member.color}}>{member.label}</div>
+                  <div style={{fontSize:11,color:"#9090A0",marginTop:2}}>
+                    {allTasks.filter(p=>!p.done).length} active · {done} done
+                  </div>
+                </div>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <button onClick={e=>{e.stopPropagation();onAdd(member.id);}}
+                  style={{background:member.color,border:"none",borderRadius:8,padding:"5px 12px",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>
+                  + Task
+                </button>
+                <span style={{fontSize:14,color:member.color}}>{isOpen?"▾":"▸"}</span>
+              </div>
+            </button>
+
+            {isOpen&&(
+              <div>
+                {tasks.length===0?(
+                  <div style={{padding:"16px 18px",fontSize:13,color:"#9090A0",fontStyle:"italic"}}>
+                    {filter==="done"?"Nothing completed yet":"All done! 🎉 or add a task above"}
+                  </div>
+                ):tasks.map(t=>(
+                  <ProjectPill key={t.id} task={t} member={member} onToggle={onToggle} onEdit={onEdit} onDelete={onDelete}/>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── ADD/EDIT PROJECT TASK SHEET ──────────────────────────────────────────────
+function AddProjectSheet({ gardenId, defaultMemberId, onSave, onClose, editTask, onUpdate, onDelete }) {
+  const isEdit = !!editTask;
+  const [memberId,  setMemberId]  = useState(isEdit?editTask.memberId:(defaultMemberId||"ange"));
+  const [title,     setTitle]     = useState(isEdit?editTask.title:"");
+  const [notes,     setNotes]     = useState(isEdit?editTask.notes:"");
+  const [priority,  setPriority]  = useState(isEdit?editTask.priority:"Medium");
+  const [dueDate,   setDueDate]   = useState(isEdit?editTask.dueDate:"");
+  const [saving,    setSaving]    = useState(false);
+  const [err,       setErr]       = useState("");
+
+  const member = PROJ_MEMBERS.find(m=>m.id===memberId)||PROJ_MEMBERS[0];
+
+  async function save() {
+    if(!title.trim()) return;
+    setSaving(true); setErr("");
+    const payload = { member_id:memberId, garden_id:gardenId, title:title.trim(), notes, priority, due_date:dueDate||null };
+    if (isEdit) {
+      const { data, error } = await sb.from("personal_projects").update(payload).eq("id",editTask.id).select().single();
+      if (error) { setErr(error.message); setSaving(false); return; }
+      onUpdate(mapProject(data)); onClose();
+    } else {
+      const { data, error } = await sb.from("personal_projects").insert(payload).select().single();
+      if (error) { setErr(error.message); setSaving(false); return; }
+      onSave(mapProject(data)); onClose();
+    }
+  }
+
+  async function del() {
+    if (!window.confirm("Delete this task?")) return;
+    await sb.from("personal_projects").delete().eq("id",editTask.id);
+    onDelete(editTask.id); onClose();
+  }
+
+  return (
+    <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="sheet" style={{background:`linear-gradient(180deg,${member.light.replace(".08","0.15")} 0%,#F8F5FF 100%)`}}>
+        <div className="sheet-handle"/>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+          <div style={{fontWeight:700,fontSize:20,color:"#1A1A2E"}}>{isEdit?"Edit task":"Add task"}</div>
+          {isEdit&&<button onClick={del} style={{background:"rgba(184,76,76,.1)",border:"none",borderRadius:8,padding:"6px 12px",color:"#B84C4C",fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:13}}>🗑️ Delete</button>}
+        </div>
+        {err&&<div className="err">{err}</div>}
+
+        <div className="field">
+          <label>Whose project?</label>
+          <div style={{display:"flex",gap:8}}>
+            {PROJ_MEMBERS.map(m=>(
+              <button key={m.id} onClick={()=>setMemberId(m.id)}
+                style={{flex:1,padding:"10px 8px",borderRadius:10,fontFamily:"inherit",fontSize:13,fontWeight:700,border:`2px solid ${memberId===m.id?m.color:"#E0E0E8"}`,
+                  background:memberId===m.id?m.light:"transparent",color:memberId===m.id?m.color:"#9090A0",cursor:"pointer",transition:"all .15s"}}>
+                {m.emoji} {m.id.charAt(0).toUpperCase()+m.id.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="field">
+          <label>Task title</label>
+          <input type="text" value={title} onChange={e=>setTitle(e.target.value)} placeholder="What needs doing?" autoFocus
+            style={{borderColor:`${member.color}44`}}/>
+        </div>
+
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          <div className="field">
+            <label>Priority</label>
+            <select value={priority} onChange={e=>setPriority(e.target.value)} style={{borderColor:`${member.color}44`}}>
+              {PROJ_PRIORITY.map(p=><option key={p}>{p}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Due date <span style={{fontWeight:400,color:"#9090A0"}}>(optional)</span></label>
+            <input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)} style={{borderColor:`${member.color}44`}}/>
+          </div>
+        </div>
+
+        <div className="field">
+          <label>Notes <span style={{fontWeight:400,color:"#9090A0"}}>(optional)</span></label>
+          <textarea rows={2} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Any details…"
+            style={{resize:"vertical",borderColor:`${member.color}44`}}/>
+        </div>
+
+        <div style={{display:"flex",gap:10,marginTop:4}}>
+          <button onClick={onClose} className="big-btn" style={{background:"rgba(0,0,0,.07)",color:"#6B6B8A",flex:1}}>Cancel</button>
+          <button onClick={save} disabled={!title.trim()||saving} className="big-btn"
+            style={{flex:2,background:member.color,color:"#fff",opacity:title.trim()?1:.45}}>
+            {saving?<Spinner/>:isEdit?"Save changes":"Add task"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── ROOT APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [authUser,  setAuthUser]  = useState(null);
@@ -1511,6 +1745,7 @@ export default function App() {
   const [plants,    setPlants]    = useState([]);
   const [tasks,     setTasks]     = useState([]);
   const [chores,    setChores]    = useState([]);
+  const [projects,  setProjects]  = useState([]);
   const [loading,   setLoading]   = useState(false);
   const [screen,    setScreen]    = useState("home");
   const [modal,     setModal]     = useState(null);
@@ -1552,6 +1787,8 @@ export default function App() {
     // Load property chores
     const { data: choresData } = await sb.from("property_chores").select("*").eq("garden_id", g.id);
     setChores((choresData||[]).map(mapChore));
+    const { data: projData } = await sb.from("personal_projects").select("*").eq("garden_id", g.id);
+    setProjects((projData||[]).map(mapProject));
     setLoading(false);
   }
 
@@ -1609,6 +1846,25 @@ export default function App() {
   function deleteTask(id)      { setTasks(ts=>ts.filter(t=>t.id!==id)); }
   function updateChore(updated){ setChores(cs=>cs.map(c=>c.id===updated.id?updated:c)); }
   function deleteChore(id)     { setChores(cs=>cs.filter(c=>c.id!==id)); }
+
+  // Project handlers
+  const [editProject,  setEditProject]  = useState(null);
+  const [projMemberCtx, setProjMemberCtx] = useState("ange");
+  function openAddProject(memberId="ange") { setEditProject(null); setProjMemberCtx(memberId); setModal("project"); }
+  function openEditProject(task) { setEditProject(task); setModal("project"); }
+  async function toggleProjectDone(taskId) {
+    const task = projects.find(p=>p.id===taskId);
+    if (!task) return;
+    if (task.done) {
+      await sb.from("personal_projects").update({completed_at:null}).eq("id",taskId);
+      setProjects(ps=>ps.map(p=>p.id===taskId?{...p,done:false,doneAt:null}:p));
+    } else {
+      await sb.from("personal_projects").update({completed_at:new Date().toISOString()}).eq("id",taskId);
+      setProjects(ps=>ps.map(p=>p.id===taskId?{...p,done:true,doneAt:TODAY}:p));
+    }
+  }
+  function updateProject(updated) { setProjects(ps=>ps.map(p=>p.id===updated.id?updated:p)); }
+  function deleteProject(id)      { setProjects(ps=>ps.filter(p=>p.id!==id)); }
 
   async function signOut() { await sb.auth.signOut(); setGarden(null); setPlants([]); setTasks([]); setChores([]); }
 
@@ -1672,6 +1928,14 @@ export default function App() {
           </button>
         ))}
 
+        {/* Personal Projects section */}
+        <hr style={{margin:"14px 20px",border:"none",borderTop:"1px solid rgba(255,255,255,.1)"}}/>
+        <div style={{padding:"2px 20px 4px",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.35)",letterSpacing:".1em",textTransform:"uppercase"}}>✨ Personal</div>
+        <button className={`nav-btn ${screen==="projects"?"active":""}`} onClick={()=>setScreen("projects")}>
+          <span className="nav-icon">✨</span>
+          <span className="nav-label" style={{color:screen==="projects"?"#D4A8C8":"#C4A0B8"}}>Personal Projects</span>
+        </button>
+
         {/* Settings & sign out */}
         <hr style={{margin:"14px 20px",border:"none",borderTop:"1px solid rgba(255,255,255,.1)"}}/>
         <div style={{padding:"2px 20px 4px",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.35)",letterSpacing:".1em",textTransform:"uppercase"}}>⚙️ Account</div>
@@ -1693,6 +1957,7 @@ export default function App() {
         {screen==="calendar"   && <CalendarScreen     plants={plants} tasks={tasks} onToggle={toggleDone}/>}
         {screen==="plants"     && <PlantsScreen       plants={plants} tasks={tasks} onAddPlant={()=>setModal("plant")} onAddTask={openAddTask} onEditTask={openEditTask} onDeleteTask={deleteTask}/>}
         {screen==="settings"   && <SettingsScreen     user={authUser} garden={garden} members={members} dispName={dispName} onSignOut={signOut}/>}
+        {screen==="projects"   && <PersonalProjectsScreen projects={projects} gardenId={garden.id} onToggle={toggleProjectDone} onAdd={openAddProject} onEdit={openEditProject} onDelete={deleteProject}/>}
         {screen==="prop-home"    && <PropertyHomeScreen    chores={chores} dispName={dispName} gardenId={garden.id} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
         {screen==="prop-tasks"   && <PropertyChoresScreen  chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
         {screen==="prop-calendar"&& <PropertyCalendarScreen chores={chores} onToggle={toggleChoreDone}/>}
@@ -1701,7 +1966,8 @@ export default function App() {
 
       {modal==="task"  && <AddTaskSheet  plants={plants} defaultPlantId={taskCtx} gardenId={garden.id} onSave={t=>setTasks(ts=>[...ts,t])} onClose={()=>{setModal(null);setEditTask(null);}} editTask={editTask} onUpdate={updateTask} onDelete={deleteTask}/>}
       {modal==="plant" && <AddPlantSheet gardenId={garden.id} onSave={p=>setPlants(ps=>[...ps,p])} onClose={()=>setModal(null)}/>}
-      {modal==="chore" && <AddChoreSheet gardenId={garden.id} onSave={c=>setChores(cs=>[...cs,c])} onClose={()=>{setModal(null);setEditChore(null);}} editChore={editChore} onUpdate={updateChore} onDelete={deleteChore}/>}
+      {modal==="chore"   && <AddChoreSheet gardenId={garden.id} onSave={c=>setChores(cs=>[...cs,c])} onClose={()=>{setModal(null);setEditChore(null);}} editChore={editChore} onUpdate={updateChore} onDelete={deleteChore}/>}
+      {modal==="project" && <AddProjectSheet gardenId={garden.id} defaultMemberId={projMemberCtx} onSave={p=>setProjects(ps=>[...ps,p])} onClose={()=>{setModal(null);setEditProject(null);}} editTask={editProject} onUpdate={updateProject} onDelete={deleteProject}/>}
 
       {/* ── Mobile floating hamburger ── */}
       <button className="mob-hamburger-float" onClick={()=>setDrawerOpen(true)}>
@@ -1741,6 +2007,12 @@ export default function App() {
                 <span className="mob-nav-label" style={{color:screen===n.id?"#D4A574":"#C4A882"}}>{n.label}{n.badge>0&&<span style={{marginLeft:6,fontSize:10,background:"#B84C4C",color:"#fff",padding:"1px 6px",borderRadius:20}}>{n.badge}</span>}</span>
               </button>
             ))}
+            <hr style={{margin:"12px 20px",border:"none",borderTop:"1px solid rgba(255,255,255,.1)"}}/>
+            <div className="mob-drawer-section">✨ Personal</div>
+            <button className={`mob-nav-btn ${screen==="projects"?"active":""}`} onClick={()=>{setScreen("projects");setDrawerOpen(false);}}>
+              <span className="mob-nav-icon">✨</span>
+              <span className="mob-nav-label" style={{color:screen==="projects"?"#D4A8C8":"#C4A0B8"}}>Personal Projects</span>
+            </button>
             <hr style={{margin:"12px 20px",border:"none",borderTop:"1px solid rgba(255,255,255,.1)"}}/>
             <button className={`mob-nav-btn ${screen==="settings"?"active":""}`} onClick={()=>{setScreen("settings");setDrawerOpen(false);}}>
               <span className="mob-nav-icon">⚙️</span>
