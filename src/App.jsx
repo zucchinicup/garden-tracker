@@ -16,7 +16,7 @@ const CSS = `
     background: linear-gradient(160deg, #E8F0E4 0%, #F5EFE6 50%, #EBE5D8 100%);
     min-height:100vh; color:#2D3B2D; -webkit-font-smoothing:antialiased;
   }
-  /* ── Desktop shell ── */
+  /* ── Desktop: sidebar layout ── */
   .shell      { display:flex; min-height:100vh; }
   .sidebar    { width:220px; flex-shrink:0; background:#1B3A2D; display:flex; flex-direction:column; padding:28px 0 24px; position:fixed; top:0; left:0; bottom:0; z-index:50; }
   .sidebar-logo { padding:0 20px 24px; border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:12px; }
@@ -35,6 +35,31 @@ const CSS = `
   .nav-btn:hover .nav-label  { color:#C5DDD0; }
   .px { padding-left:0; padding-right:0; }
   .hero       { padding:0 0 24px; text-align:left; }
+
+  /* ── Mobile: bottom nav layout ── */
+  @media (max-width: 768px) {
+    .shell     { flex-direction:column; }
+    .sidebar   { display:none; }
+    .screen    { margin-left:0; padding:20px 16px 90px; }
+    .home-grid { grid-template-columns:1fr; gap:20px; }
+    .two-col   { grid-template-columns:1fr; }
+    .three-col { grid-template-columns:1fr 1fr; }
+    .hero      { padding:16px 0 20px; text-align:center; }
+    .bottom-nav{ display:flex; }
+    .prop-home-grid { grid-template-columns:1fr; gap:20px; }
+  }
+  @media (min-width: 769px) {
+    .bottom-nav { display:none; }
+  }
+
+  /* ── Bottom nav (mobile only) ── */
+  .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:rgba(255,255,255,.92); backdrop-filter:blur(16px); border-top:1px solid rgba(0,0,0,.06); z-index:50; display:none; overflow-x:auto; scrollbar-width:none; }
+  .bottom-nav::-webkit-scrollbar { display:none; }
+  .mob-btn    { flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 14px 14px; background:none; border:none; cursor:pointer; font-family:inherit; }
+  .mob-icon   { font-size:20px; line-height:1; }
+  .mob-label  { font-size:9px; font-weight:700; letter-spacing:.05em; color:#8FAD8F; white-space:nowrap; }
+  .mob-btn.active .mob-label  { color:#3A7D5A; }
+  .mob-btn.prop-active .mob-label { color:#D4A574; }
   .hero-date  { font-size:12px; color:#8FAD8F; letter-spacing:.08em; text-transform:uppercase; font-weight:700; margin-bottom:6px; }
   .hero-title { font-size:28px; font-weight:700; color:#1E3A1E; line-height:1.2; }
   .orb-wrap   { display:flex; flex-direction:column; align-items:center; padding:8px 0 28px; }
@@ -268,13 +293,10 @@ function AuthScreen({ onAuth }) {
 
   async function signInWithGoogle() {
     setLoading(true); setErr("");
-   const { error } = await sb.auth.signInWithOAuth({
-  provider:"google",
-  options:{
-    redirectTo: "https://garden-tracker-indol.vercel.app",
-    skipBrowserRedirect: false,
-  }
-});
+    const { error } = await sb.auth.signInWithOAuth({
+      provider:"google",
+      options:{ redirectTo: window.location.href }
+    });
     if (error) { setErr(error.message); setLoading(false); }
   }
 
@@ -1671,6 +1693,28 @@ export default function App() {
       {modal==="task"  && <AddTaskSheet  plants={plants} defaultPlantId={taskCtx} gardenId={garden.id} onSave={t=>setTasks(ts=>[...ts,t])} onClose={()=>{setModal(null);setEditTask(null);}} editTask={editTask} onUpdate={updateTask} onDelete={deleteTask}/>}
       {modal==="plant" && <AddPlantSheet gardenId={garden.id} onSave={p=>setPlants(ps=>[...ps,p])} onClose={()=>setModal(null)}/>}
       {modal==="chore" && <AddChoreSheet gardenId={garden.id} onSave={c=>setChores(cs=>[...cs,c])} onClose={()=>{setModal(null);setEditChore(null);}} editChore={editChore} onUpdate={updateChore} onDelete={deleteChore}/>}
+
+      {/* ── Mobile bottom nav ── */}
+      <nav className="bottom-nav">
+        {[
+          {id:"home",     icon:"🌿", label:"Home",     prop:false},
+          {id:"upcoming", icon:"📋", label:"Tasks",    prop:false, badge:overdueGarden},
+          {id:"calendar", icon:"📅", label:"Calendar", prop:false},
+          {id:"plants",   icon:"🌳", label:"Plants",   prop:false},
+          {id:"prop-home",    icon:"🏡", label:"Property", prop:true},
+          {id:"prop-tasks",   icon:"📋", label:"Chores",   prop:true, badge:overdueProperty},
+          {id:"prop-areas",   icon:"📍", label:"Areas",    prop:true},
+          {id:"settings", icon:"⚙️", label:"Settings", prop:false},
+        ].map(n=>(
+          <button key={n.id} className={`mob-btn ${screen===n.id?(n.prop?"prop-active":"active"):""}`} onClick={()=>setScreen(n.id)}>
+            <span className="mob-icon">
+              {n.icon}
+              {n.badge>0&&<sup style={{fontSize:8,color:"#B84C4C",fontWeight:700,marginLeft:1}}>{n.badge}</sup>}
+            </span>
+            <span className="mob-label">{n.label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
