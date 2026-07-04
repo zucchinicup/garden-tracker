@@ -36,30 +36,38 @@ const CSS = `
   .px { padding-left:0; padding-right:0; }
   .hero       { padding:0 0 24px; text-align:left; }
 
-  /* ── Mobile: bottom nav layout ── */
+  /* ── Mobile layout ── */
   @media (max-width: 768px) {
     .shell     { flex-direction:column; }
     .sidebar   { display:none; }
-    .screen    { margin-left:0; padding:20px 16px 90px; }
+    .screen    { margin-left:0; padding:20px 16px 40px; }
     .home-grid { grid-template-columns:1fr; gap:20px; }
     .two-col   { grid-template-columns:1fr; }
     .three-col { grid-template-columns:1fr 1fr; }
-    .hero      { padding:16px 0 20px; text-align:center; }
-    .bottom-nav{ display:flex; }
+    .hero      { padding:8px 0 20px; text-align:center; }
     .prop-home-grid { grid-template-columns:1fr; gap:20px; }
   }
   @media (min-width: 769px) {
-    .bottom-nav { display:none; }
+    .mob-topbar { display:none !important; }
+    .mob-drawer-backdrop { display:none !important; }
   }
 
-  /* ── Bottom nav (mobile only) ── */
-  .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:rgba(255,255,255,.92); backdrop-filter:blur(16px); border-top:1px solid rgba(0,0,0,.06); z-index:50; display:none; overflow-x:auto; scrollbar-width:none; }
-  .bottom-nav::-webkit-scrollbar { display:none; }
-  .mob-btn    { flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 14px 14px; background:none; border:none; cursor:pointer; font-family:inherit; }
-  .mob-icon   { font-size:20px; line-height:1; }
-  .mob-label  { font-size:9px; font-weight:700; letter-spacing:.05em; color:#8FAD8F; white-space:nowrap; }
-  .mob-btn.active .mob-label  { color:#3A7D5A; }
-  .mob-btn.prop-active .mob-label { color:#D4A574; }
+  /* ── Mobile floating hamburger ── */
+  .mob-hamburger-float { position:fixed; top:16px; right:16px; z-index:60; background:#1B3A2D; border:none; border-radius:10px; cursor:pointer; display:flex; flex-direction:column; gap:5px; padding:10px 11px; box-shadow:0 2px 12px rgba(0,0,0,.2); }
+  .mob-hamburger-float span { display:block; width:20px; height:2.5px; background:#fff; border-radius:2px; }
+
+  /* ── Drawer ── */
+  .mob-drawer-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:70; }
+  .mob-drawer { position:fixed; top:0; left:0; bottom:0; width:260px; background:#1B3A2D; z-index:80; display:flex; flex-direction:column; padding:48px 0 24px; overflow-y:auto; }
+  .mob-drawer-logo { padding:0 20px 20px; border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:12px; }
+  .mob-nav-btn { display:flex; align-items:center; gap:12px; padding:13px 20px; background:none; border:none; border-left:3px solid transparent; cursor:pointer; font-family:inherit; width:100%; text-align:left; transition:all .15s; }
+  .mob-nav-btn.active { background:rgba(255,255,255,.1); border-left-color:#7ED4A8; }
+  .mob-nav-btn.prop-active { background:rgba(255,255,255,.08); border-left-color:#D4A574; }
+  .mob-nav-icon { font-size:18px; flex-shrink:0; }
+  .mob-nav-label { font-size:14px; font-weight:700; color:#9DC4AF; }
+  .mob-nav-btn.active .mob-nav-label { color:#7ED4A8; }
+  .mob-nav-btn.prop-active .mob-nav-label { color:#D4A574; }
+  .mob-drawer-section { padding:6px 20px 4px; font-size:10px; font-weight:700; color:rgba(255,255,255,.35); letter-spacing:.1em; text-transform:uppercase; margin-top:8px; }
   .hero-date  { font-size:12px; color:#8FAD8F; letter-spacing:.08em; text-transform:uppercase; font-weight:700; margin-bottom:6px; }
   .hero-title { font-size:28px; font-weight:700; color:#1E3A1E; line-height:1.2; }
   .orb-wrap   { display:flex; flex-direction:column; align-items:center; padding:8px 0 28px; }
@@ -1509,6 +1517,7 @@ export default function App() {
   const [taskCtx,   setTaskCtx]   = useState(null);
   const [editTask,  setEditTask]  = useState(null);
   const [editChore, setEditChore] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // ── Auth listener ──
   useEffect(()=>{
@@ -1694,27 +1703,55 @@ export default function App() {
       {modal==="plant" && <AddPlantSheet gardenId={garden.id} onSave={p=>setPlants(ps=>[...ps,p])} onClose={()=>setModal(null)}/>}
       {modal==="chore" && <AddChoreSheet gardenId={garden.id} onSave={c=>setChores(cs=>[...cs,c])} onClose={()=>{setModal(null);setEditChore(null);}} editChore={editChore} onUpdate={updateChore} onDelete={deleteChore}/>}
 
-      {/* ── Mobile bottom nav ── */}
-      <nav className="bottom-nav">
-        {[
-          {id:"home",     icon:"🌿", label:"Home",     prop:false},
-          {id:"upcoming", icon:"📋", label:"Tasks",    prop:false, badge:overdueGarden},
-          {id:"calendar", icon:"📅", label:"Calendar", prop:false},
-          {id:"plants",   icon:"🌳", label:"Plants",   prop:false},
-          {id:"prop-home",    icon:"🏡", label:"Property", prop:true},
-          {id:"prop-tasks",   icon:"📋", label:"Chores",   prop:true, badge:overdueProperty},
-          {id:"prop-areas",   icon:"📍", label:"Areas",    prop:true},
-          {id:"settings", icon:"⚙️", label:"Settings", prop:false},
-        ].map(n=>(
-          <button key={n.id} className={`mob-btn ${screen===n.id?(n.prop?"prop-active":"active"):""}`} onClick={()=>setScreen(n.id)}>
-            <span className="mob-icon">
-              {n.icon}
-              {n.badge>0&&<sup style={{fontSize:8,color:"#B84C4C",fontWeight:700,marginLeft:1}}>{n.badge}</sup>}
-            </span>
-            <span className="mob-label">{n.label}</span>
-          </button>
-        ))}
-      </nav>
+      {/* ── Mobile floating hamburger ── */}
+      <button className="mob-hamburger-float" onClick={()=>setDrawerOpen(true)}>
+        <span/><span/><span/>
+      </button>
+
+      {/* ── Mobile drawer ── */}
+      {drawerOpen && (
+        <div className="mob-drawer-backdrop" onClick={()=>setDrawerOpen(false)}>
+          <div className="mob-drawer" onClick={e=>e.stopPropagation()}>
+            <div className="mob-drawer-logo">
+              <div style={{fontSize:13,color:"#7DBE9A",fontWeight:700}}>Dopamine Farm</div>
+              <div style={{fontSize:12,color:"rgba(255,255,255,.5)",marginTop:2}}>{dispName}</div>
+            </div>
+            <div className="mob-drawer-section">🌿 Garden</div>
+            {[
+              {id:"home",     icon:"🌿", label:"Home"},
+              {id:"upcoming", icon:"📋", label:"Tasks", badge:overdueGarden},
+              {id:"calendar", icon:"📅", label:"Calendar"},
+              {id:"plants",   icon:"🌳", label:"Plants"},
+            ].map(n=>(
+              <button key={n.id} className={`mob-nav-btn ${screen===n.id?"active":""}`} onClick={()=>{setScreen(n.id);setDrawerOpen(false);}}>
+                <span className="mob-nav-icon">{n.icon}</span>
+                <span className="mob-nav-label">{n.label}{n.badge>0&&<span style={{marginLeft:6,fontSize:10,background:"#B84C4C",color:"#fff",padding:"1px 6px",borderRadius:20}}>{n.badge}</span>}</span>
+              </button>
+            ))}
+            <hr style={{margin:"12px 20px",border:"none",borderTop:"1px solid rgba(255,255,255,.1)"}}/>
+            <div className="mob-drawer-section">🏡 Property</div>
+            {[
+              {id:"prop-home",    icon:"🏡", label:"Home"},
+              {id:"prop-tasks",   icon:"📋", label:"Tasks", badge:overdueProperty},
+              {id:"prop-calendar",icon:"📅", label:"Calendar"},
+              {id:"prop-areas",   icon:"📍", label:"Areas"},
+            ].map(n=>(
+              <button key={n.id} className={`mob-nav-btn ${screen===n.id?"prop-active":""}`} onClick={()=>{setScreen(n.id);setDrawerOpen(false);}}>
+                <span className="mob-nav-icon">{n.icon}</span>
+                <span className="mob-nav-label" style={{color:screen===n.id?"#D4A574":"#C4A882"}}>{n.label}{n.badge>0&&<span style={{marginLeft:6,fontSize:10,background:"#B84C4C",color:"#fff",padding:"1px 6px",borderRadius:20}}>{n.badge}</span>}</span>
+              </button>
+            ))}
+            <hr style={{margin:"12px 20px",border:"none",borderTop:"1px solid rgba(255,255,255,.1)"}}/>
+            <button className={`mob-nav-btn ${screen==="settings"?"active":""}`} onClick={()=>{setScreen("settings");setDrawerOpen(false);}}>
+              <span className="mob-nav-icon">⚙️</span>
+              <span className="mob-nav-label">Settings</span>
+            </button>
+            <div style={{marginTop:"auto",padding:"16px 20px 0"}}>
+              <button onClick={signOut} style={{background:"rgba(255,255,255,.08)",border:"none",borderRadius:8,padding:"8px 12px",color:"#9DC4AF",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",width:"100%",textAlign:"left"}}>Sign out</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
