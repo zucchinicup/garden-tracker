@@ -55,6 +55,11 @@ const CSS = `
   /* ── Mobile floating hamburger ── */
 
   /* ── Drawer ── */
+  .mob-header { position:fixed; top:0; left:0; right:0; height:56px; background:#fff; border-bottom:1px solid rgba(0,0,0,.1); display:flex; align-items:center; gap:14px; padding:0 16px; z-index:100; }
+  .mob-hamburger { background:#1B3A2D; border:none; border-radius:9px; cursor:pointer; display:flex; flex-direction:column; gap:4px; padding:9px 10px; flex-shrink:0; }
+  .mob-hamburger span { display:block; width:18px; height:2px; background:#fff; border-radius:2px; }
+  .mob-header-title { font-size:17px; font-weight:700; color:#1E3A1E; flex:1; }
+  @media (min-width:769px) { .mob-header { display:none !important; } }
   .mob-drawer-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:70; }
   .mob-drawer { position:fixed; top:0; left:0; bottom:0; width:260px; background:#1B3A2D; z-index:80; display:flex; flex-direction:column; padding:48px 0 24px; overflow-y:auto; }
   .mob-drawer-logo { padding:0 20px 20px; border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:12px; }
