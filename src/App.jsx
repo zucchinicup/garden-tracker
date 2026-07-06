@@ -38,9 +38,9 @@ const CSS = `
 
   /* ── Mobile layout ── */
   @media (max-width: 768px) {
-    .shell     { flex-direction:column; }
+    .shell     { flex-direction:column; height:100vh; overflow:hidden; }
     .sidebar   { display:none; }
-    .screen    { margin-left:0; padding:16px 20px 40px; }
+    .screen    { margin-left:0; padding:70px 16px 40px; height:100vh; overflow-y:auto; -webkit-overflow-scrolling:touch; }
     .home-grid { grid-template-columns:1fr; gap:20px; }
     .two-col   { grid-template-columns:1fr; }
     .three-col { grid-template-columns:1fr 1fr; }
