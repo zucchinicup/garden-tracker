@@ -55,13 +55,13 @@ const CSS = `
   /* ── Mobile floating hamburger ── */
 
   /* ── Drawer ── */
-  .mob-header { position:fixed; top:14px; left:14px; z-index:100; }
+  .mob-header { position:fixed; top:14px; left:14px; z-index:190; }
   .mob-hamburger { background:#1B3A2D; border:none; border-radius:10px; cursor:pointer; display:flex; flex-direction:column; gap:5px; padding:10px 11px; box-shadow:0 2px 12px rgba(0,0,0,.2); }
   .mob-hamburger span { display:block; width:20px; height:2.5px; background:#fff; border-radius:2px; }
   .mob-header-title { display:none; }
   @media (min-width:769px) { .mob-header { display:none !important; } }
-  .mob-drawer-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:70; }
-  .mob-drawer { position:fixed; top:0; left:0; bottom:0; width:260px; background:#1B3A2D; z-index:80; display:flex; flex-direction:column; padding:48px 0 24px; overflow-y:auto; }
+  .mob-drawer-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:200; }
+  .mob-drawer { position:fixed; top:0; left:0; bottom:0; width:260px; background:#1B3A2D; z-index:210; display:flex; flex-direction:column; padding:48px 0 24px; overflow-y:auto; }
   .mob-drawer-logo { padding:0 20px 20px; border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:12px; }
   .mob-nav-btn { display:flex; align-items:center; gap:12px; padding:13px 20px; background:none; border:none; border-left:3px solid transparent; cursor:pointer; font-family:inherit; width:100%; text-align:left; transition:all .15s; }
   .mob-nav-btn.active { background:rgba(255,255,255,.1); border-left-color:#7ED4A8; }
