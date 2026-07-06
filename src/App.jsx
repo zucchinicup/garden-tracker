@@ -53,8 +53,6 @@ const CSS = `
   }
 
   /* ── Mobile floating hamburger ── */
-  .mob-hamburger-float { position:fixed; top:20px; left:20px; z-index:60; background:#1B3A2D; border:none; border-radius:10px; cursor:pointer; display:flex; flex-direction:column; gap:5px; padding:9px 10px; box-shadow:0 2px 10px rgba(0,0,0,.15); }
-  .mob-hamburger-float span { display:block; width:20px; height:2.5px; background:#fff; border-radius:2px; }
 
   /* ── Drawer ── */
   .mob-drawer-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:70; }
