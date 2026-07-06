@@ -1890,6 +1890,26 @@ export default function App() {
 
   return (
     <div className="shell">
+
+      {/* ── Mobile sticky header ── */}
+      <div className="mob-header">
+        <button className="mob-hamburger" onClick={()=>setDrawerOpen(true)}>
+          <span/><span/><span/>
+        </button>
+        <div className="mob-header-title">
+          {screen==="home"        ? "🌿 Garden"
+          :screen==="upcoming"    ? "📋 Tasks"
+          :screen==="calendar"    ? "📅 Calendar"
+          :screen==="plants"      ? "🌳 Plants"
+          :screen==="prop-home"   ? "🏡 Property"
+          :screen==="prop-tasks"  ? "📋 Chores"
+          :screen==="prop-calendar"?"📅 Calendar"
+          :screen==="prop-areas"  ? "📍 Areas"
+          :screen==="projects"    ? "✨ Projects"
+          :screen==="settings"    ? "⚙️ Settings"
+          :"Dopamine Farm"}
+        </div>
+
       <style>{CSS}</style>
 
       {/* ── Sidebar ── */}
@@ -1968,24 +1988,6 @@ export default function App() {
       {modal==="chore"   && <AddChoreSheet gardenId={garden.id} onSave={c=>setChores(cs=>[...cs,c])} onClose={()=>{setModal(null);setEditChore(null);}} editChore={editChore} onUpdate={updateChore} onDelete={deleteChore}/>}
       {modal==="project" && <AddProjectSheet gardenId={garden.id} defaultMemberId={projMemberCtx} onSave={p=>setProjects(ps=>[...ps,p])} onClose={()=>{setModal(null);setEditProject(null);}} editTask={editProject} onUpdate={updateProject} onDelete={deleteProject}/>}
 
-      {/* ── Mobile sticky header ── */}
-      <div className="mob-header">
-        <button className="mob-hamburger" onClick={()=>setDrawerOpen(true)}>
-          <span/><span/><span/>
-        </button>
-        <div className="mob-header-title">
-          {screen==="home"        ? "🌿 Garden"
-          :screen==="upcoming"    ? "📋 Tasks"
-          :screen==="calendar"    ? "📅 Calendar"
-          :screen==="plants"      ? "🌳 Plants"
-          :screen==="prop-home"   ? "🏡 Property"
-          :screen==="prop-tasks"  ? "📋 Chores"
-          :screen==="prop-calendar"?"📅 Calendar"
-          :screen==="prop-areas"  ? "📍 Areas"
-          :screen==="projects"    ? "✨ Projects"
-          :screen==="settings"    ? "⚙️ Settings"
-          :"Dopamine Farm"}
-        </div>
       </div>
 
       {/* ── Mobile drawer ── */}
