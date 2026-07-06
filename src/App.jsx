@@ -55,7 +55,8 @@ const CSS = `
   /* ── Mobile floating hamburger ── */
 
   /* ── Drawer ── */
-  .mob-header { position:fixed; top:14px; left:14px; z-index:190; }
+  .mob-header { position:fixed; top:14px; left:14px; z-index:190; pointer-events:none; }
+  .mob-hamburger { pointer-events:all; }
   .mob-hamburger { background:#1B3A2D; border:none; border-radius:10px; cursor:pointer; display:flex; flex-direction:column; gap:5px; padding:10px 11px; box-shadow:0 2px 12px rgba(0,0,0,.2); }
   .mob-hamburger span { display:block; width:20px; height:2.5px; background:#fff; border-radius:2px; }
   .mob-header-title { display:none; }
