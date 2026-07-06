@@ -321,7 +321,7 @@ function AuthScreen({ onAuth }) {
     setLoading(true); setErr("");
     const { error } = await sb.auth.signInWithOAuth({
       provider:"google",
-      options:{ redirectTo: window.location.href }
+      options:{ redirectTo: "https://garden-tracker-indol.vercel.app" }
     });
     if (error) { setErr(error.message); setLoading(false); }
   }
