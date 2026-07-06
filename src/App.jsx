@@ -98,9 +98,11 @@ const CSS = `
   .cal-num    { font-size:12px; font-weight:700; color:#3B4A3B; margin-bottom:3px; }
   .cal-dot    { width:6px; height:6px; border-radius:50%; display:inline-block; margin:1px; }
   .plant-row  { display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:14px; background:rgba(255,255,255,.7); margin-bottom:8px; }
-  .overlay    { position:fixed; inset:0; background:rgba(30,58,30,.35); z-index:80; display:flex; align-items:flex-end; justify-content:center; }
-  .sheet      { background:linear-gradient(180deg,#F0EDE5 0%,#EAE6DC 100%); border-radius:24px 24px 0 0; padding:24px 22px 40px; width:100%; max-width:480px; max-height:88vh; overflow-y:auto; }
-  .sheet-handle { width:36px; height:4px; border-radius:2px; background:#C5C0B5; margin:0 auto 20px; }
+  .overlay    { position:fixed; inset:0; background:#fff; z-index:80; display:flex; align-items:flex-start; justify-content:center; overflow-y:auto; }
+  .sheet      { background:#fff; border-radius:0; padding:56px 22px 60px; width:100%; max-width:480px; min-height:100vh; }
+  .sheet-handle { display:none; }
+  .sheet-close { position:fixed; top:16px; right:16px; z-index:90; width:36px; height:36px; border-radius:50%; background:#F3F4F6; border:none; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; color:#6B7280; }
+  .sheet-close:hover { background:#E5E7EB; }
   .field      { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
   .field label{ font-size:11px; font-weight:700; color:#6B8F6B; letter-spacing:.08em; text-transform:uppercase; }
   .field input,.field select,.field textarea { padding:12px 14px; border:2px solid rgba(0,0,0,.08); border-radius:12px; font-family:inherit; font-size:15px; color:#2D3B2D; background:rgba(255,255,255,.8); transition:border-color .15s; }
@@ -201,7 +203,8 @@ const PROP_CHORE_TYPES = ["Mow","Slash","Whipper Snip","Fence Check","Repair","W
 const PROJ_MEMBERS = [
   { id:"ange", label:"Ange's Projects", emoji:"🌸", color:"#C0547A", light:"rgba(192,84,122,.08)", accent:"#E8A0B8" },
   { id:"jake", label:"Jake's Projects", emoji:"💜", color:"#6B4FA0", light:"rgba(107,79,160,.08)", accent:"#B09DD4" },
-  { id:"ben",  label:"Ben's Projects",  emoji:"🔵", color:"#3A6FA0", light:"rgba(58,111,160,.08)", accent:"#85B4D8" },
+  { id:"ben",  label:"Ben's Projects",  emoji:"🩶", color:"#4A4A4A", light:"rgba(74,74,74,.08)",   accent:"#9A9A9A" },
+  { id:"meg",  label:"Meg's Projects",  emoji:"🩵", color:"#5A9EC0", light:"rgba(90,158,192,.08)", accent:"#A8D4E8" },
 ];
 const PROJ_PRIORITY = ["Low","Medium","High","Urgent"];
 const PROJ_PRIORITY_COLOR = { Low:"#8FAD8F", Medium:"#B07B2A", High:"#C0547A", Urgent:"#B84C4C" };
@@ -597,8 +600,7 @@ function UpcomingScreen({ plants, tasks, onToggle, onEditTask, onDeleteTask }) {
 
   return (
     <div className="fade-up" style={{paddingTop:0}}>
-      <div className="px" style={{marginBottom:20}}>
-        <div style={{fontSize:22,fontWeight:700,color:"#1E3A1E",marginBottom:4}}>Upcoming tasks</div>
+      <div style={{marginBottom:20}}>
         <div style={{fontSize:13,color:"#8FAD8F"}}>{tasks.filter(t=>!t.done).length} active across {plants.length} plants</div>
       </div>
       {sections.length===0?(
@@ -958,7 +960,7 @@ function AddTaskSheet({ plants, defaultPlantId, gardenId, onSave, onClose, editT
   return (
     <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="sheet">
-        <div className="sheet-handle"/>
+        <div className="sheet-handle"/><button className="sheet-close" onClick={onClose}>×</button>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
           <div style={{fontWeight:700,fontSize:20,color:"#1E3A1E"}}>{isEdit?"Edit task":"Add task"}</div>
           {isEdit&&<button onClick={del} style={{background:"rgba(184,76,76,.1)",border:"none",borderRadius:8,padding:"6px 12px",color:"#B84C4C",fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:13}}>🗑️ Delete</button>}
@@ -1020,7 +1022,7 @@ function AddPlantSheet({ gardenId, onSave, onClose }) {
   return (
     <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="sheet">
-        <div className="sheet-handle"/>
+        <div className="sheet-handle"/><button className="sheet-close" onClick={onClose}>×</button>
         <div style={{fontWeight:700,fontSize:20,color:"#1E3A1E",marginBottom:20}}>Add plant</div>
         {err&&<div className="err">{err}</div>}
         <div className="field"><label>Plant name</label><input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Jaboticaba" autoFocus/></div>
@@ -1247,11 +1249,9 @@ function PropertyChoresScreen({ chores, onToggle, onAddChore, onEditChore, onDel
 
   return (
     <div className="fade-up prop-screen" style={{paddingTop:0}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-        <div style={{fontSize:22,fontWeight:700,color:"#2D1F0A"}}>Tasks</div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:20}}>
         <button className="sm-btn sm-btn-brown" onClick={onAddChore}>+ Chore</button>
       </div>
-      <div style={{fontSize:13,color:"#9A8A70",marginBottom:20}}>{chores.filter(c=>!c.done).length} active across the property</div>
       {sections.length===0?(
         <div className="empty"><div className="empty-icon">🏡</div><div style={{fontSize:15,fontWeight:700,color:"#7A6A4A"}}>Nothing pending!</div></div>
       ):sections.map(s=>(
@@ -1306,7 +1306,7 @@ function AddChoreSheet({ gardenId, onSave, onClose, editChore, onUpdate, onDelet
   return (
     <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="sheet" style={{background:"linear-gradient(180deg,#F5EDE0 0%,#EAE0CE 100%)"}}>
-        <div className="sheet-handle"/>
+        <div className="sheet-handle"/><button className="sheet-close" onClick={onClose}>×</button>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
           <div style={{fontWeight:700,fontSize:20,color:"#2D1F0A"}}>{isEdit?"Edit chore":"Add property chore"}</div>
           {isEdit&&<button onClick={del} style={{background:"rgba(184,76,76,.1)",border:"none",borderRadius:8,padding:"6px 12px",color:"#B84C4C",fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:13}}>🗑️ Delete</button>}
@@ -1447,10 +1447,7 @@ function PropertyAreasScreen({ chores, onToggle, onAddChore, onEditChore, onDele
   return (
     <div className="fade-up prop-screen" style={{paddingTop:0}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-        <div>
-          <div style={{fontSize:22,fontWeight:700,color:"#2D1F0A",marginBottom:4}}>Areas</div>
-          <div style={{fontSize:13,color:"#9A8A70"}}>{PROP_AREAS.length} areas across the property</div>
-        </div>
+        <div style={{fontSize:13,color:"#9A8A70"}}>{PROP_AREAS.length} areas across the property</div>
         <button className="sm-btn sm-btn-brown" onClick={onAddChore}>+ Chore</button>
       </div>
 
@@ -1574,10 +1571,7 @@ function PersonalProjectsScreen({ projects, gardenId, onToggle, onAdd, onEdit, o
   return (
     <div className="fade-up" style={{paddingTop:0}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-        <div>
-          <div style={{fontSize:22,fontWeight:700,color:"#1A1A2E",marginBottom:4}}>Personal Projects</div>
-          <div style={{fontSize:13,color:"#9090A0"}}>{projects.filter(p=>!p.done).length} active tasks</div>
-        </div>
+        <div style={{fontSize:13,color:"#9090A0"}}>{projects.filter(p=>!p.done).length} active tasks</div>
         <div style={{display:"flex",gap:6}}>
           {["active","all","done"].map(f=>(
             <button key={f} onClick={()=>setFilter(f)}
@@ -1678,7 +1672,7 @@ function AddProjectSheet({ gardenId, defaultMemberId, onSave, onClose, editTask,
   return (
     <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="sheet" style={{background:`linear-gradient(180deg,${member.light.replace(".08","0.15")} 0%,#F8F5FF 100%)`}}>
-        <div className="sheet-handle"/>
+        <div className="sheet-handle"/><button className="sheet-close" onClick={onClose}>×</button>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
           <div style={{fontWeight:700,fontSize:20,color:"#1A1A2E"}}>{isEdit?"Edit task":"Add task"}</div>
           {isEdit&&<button onClick={del} style={{background:"rgba(184,76,76,.1)",border:"none",borderRadius:8,padding:"6px 12px",color:"#B84C4C",fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:13}}>🗑️ Delete</button>}
@@ -1952,16 +1946,18 @@ export default function App() {
 
       {/* ── Main content ── */}
       <div className="screen" style={isPropScreen?{background:"linear-gradient(160deg,#EDE5D8 0%,#F5EDE0 50%,#EAE0CE 100%)"}:{}}>
-        {screen==="home"       && <HomeScreen         plants={plants} tasks={tasks} dispName={dispName} onToggle={toggleDone} onAddTask={openAddTask} onEditTask={openEditTask} onDeleteTask={deleteTask}/>}
-        {screen==="upcoming"   && <UpcomingScreen     plants={plants} tasks={tasks} onToggle={toggleDone} onEditTask={openEditTask} onDeleteTask={deleteTask}/>}
-        {screen==="calendar"   && <CalendarScreen     plants={plants} tasks={tasks} onToggle={toggleDone}/>}
-        {screen==="plants"     && <PlantsScreen       plants={plants} tasks={tasks} onAddPlant={()=>setModal("plant")} onAddTask={openAddTask} onEditTask={openEditTask} onDeleteTask={deleteTask}/>}
-        {screen==="settings"   && <SettingsScreen     user={authUser} garden={garden} members={members} dispName={dispName} onSignOut={signOut}/>}
-        {screen==="projects"   && <PersonalProjectsScreen projects={projects} gardenId={garden.id} onToggle={toggleProjectDone} onAdd={openAddProject} onEdit={openEditProject} onDelete={deleteProject}/>}
-        {screen==="prop-home"    && <PropertyHomeScreen    chores={chores} dispName={dispName} gardenId={garden.id} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
-        {screen==="prop-tasks"   && <PropertyChoresScreen  chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
-        {screen==="prop-calendar"&& <PropertyCalendarScreen chores={chores} onToggle={toggleChoreDone}/>}
-        {screen==="prop-areas"   && <PropertyAreasScreen   chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
+        <div className="mob-screen-content">
+          {screen==="home"       && <HomeScreen         plants={plants} tasks={tasks} dispName={dispName} onToggle={toggleDone} onAddTask={openAddTask} onEditTask={openEditTask} onDeleteTask={deleteTask}/>}
+          {screen==="upcoming"   && <UpcomingScreen     plants={plants} tasks={tasks} onToggle={toggleDone} onEditTask={openEditTask} onDeleteTask={deleteTask}/>}
+          {screen==="calendar"   && <CalendarScreen     plants={plants} tasks={tasks} onToggle={toggleDone}/>}
+          {screen==="plants"     && <PlantsScreen       plants={plants} tasks={tasks} onAddPlant={()=>setModal("plant")} onAddTask={openAddTask} onEditTask={openEditTask} onDeleteTask={deleteTask}/>}
+          {screen==="settings"   && <SettingsScreen     user={authUser} garden={garden} members={members} dispName={dispName} onSignOut={signOut}/>}
+          {screen==="projects"   && <PersonalProjectsScreen projects={projects} gardenId={garden.id} onToggle={toggleProjectDone} onAdd={openAddProject} onEdit={openEditProject} onDelete={deleteProject}/>}
+          {screen==="prop-home"    && <PropertyHomeScreen    chores={chores} dispName={dispName} gardenId={garden.id} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
+          {screen==="prop-tasks"   && <PropertyChoresScreen  chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
+          {screen==="prop-calendar"&& <PropertyCalendarScreen chores={chores} onToggle={toggleChoreDone}/>}
+          {screen==="prop-areas"   && <PropertyAreasScreen   chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
+        </div>
       </div>
 
       {modal==="task"  && <AddTaskSheet  plants={plants} defaultPlantId={taskCtx} gardenId={garden.id} onSave={t=>setTasks(ts=>[...ts,t])} onClose={()=>{setModal(null);setEditTask(null);}} editTask={editTask} onUpdate={updateTask} onDelete={deleteTask}/>}
@@ -1969,10 +1965,25 @@ export default function App() {
       {modal==="chore"   && <AddChoreSheet gardenId={garden.id} onSave={c=>setChores(cs=>[...cs,c])} onClose={()=>{setModal(null);setEditChore(null);}} editChore={editChore} onUpdate={updateChore} onDelete={deleteChore}/>}
       {modal==="project" && <AddProjectSheet gardenId={garden.id} defaultMemberId={projMemberCtx} onSave={p=>setProjects(ps=>[...ps,p])} onClose={()=>{setModal(null);setEditProject(null);}} editTask={editProject} onUpdate={updateProject} onDelete={deleteProject}/>}
 
-      {/* ── Mobile floating hamburger ── */}
-      <button className="mob-hamburger-float" onClick={()=>setDrawerOpen(true)}>
-        <span/><span/><span/>
-      </button>
+      {/* ── Mobile sticky header ── */}
+      <div className="mob-header">
+        <button className="mob-hamburger" onClick={()=>setDrawerOpen(true)}>
+          <span/><span/><span/>
+        </button>
+        <div className="mob-header-title">
+          {screen==="home"        ? "🌿 Garden"
+          :screen==="upcoming"    ? "📋 Tasks"
+          :screen==="calendar"    ? "📅 Calendar"
+          :screen==="plants"      ? "🌳 Plants"
+          :screen==="prop-home"   ? "🏡 Property"
+          :screen==="prop-tasks"  ? "📋 Chores"
+          :screen==="prop-calendar"?"📅 Calendar"
+          :screen==="prop-areas"  ? "📍 Areas"
+          :screen==="projects"    ? "✨ Projects"
+          :screen==="settings"    ? "⚙️ Settings"
+          :"Dopamine Farm"}
+        </div>
+      </div>
 
       {/* ── Mobile drawer ── */}
       {drawerOpen && (
