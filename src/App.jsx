@@ -40,11 +40,11 @@ const CSS = `
   @media (max-width: 768px) {
     .shell     { flex-direction:column; }
     .sidebar   { display:none; }
-    .screen    { margin-left:0; padding:20px 16px 40px; padding-left:66px; }
+    .screen    { margin-left:0; padding:16px 20px 40px; }
     .home-grid { grid-template-columns:1fr; gap:20px; }
     .two-col   { grid-template-columns:1fr; }
     .three-col { grid-template-columns:1fr 1fr; }
-    .hero      { padding:8px 0 20px; text-align:center; }
+    .hero      { padding:8px 0 20px; text-align:center; padding-left:54px; }
     .prop-home-grid { grid-template-columns:1fr; gap:20px; }
   }
   @media (min-width: 769px) {
@@ -53,7 +53,7 @@ const CSS = `
   }
 
   /* ── Mobile floating hamburger ── */
-  .mob-hamburger-float { position:fixed; top:16px; left:16px; z-index:60; background:#1B3A2D; border:none; border-radius:10px; cursor:pointer; display:flex; flex-direction:column; gap:5px; padding:10px 11px; box-shadow:0 2px 12px rgba(0,0,0,.2); }
+  .mob-hamburger-float { position:fixed; top:20px; left:20px; z-index:60; background:#1B3A2D; border:none; border-radius:10px; cursor:pointer; display:flex; flex-direction:column; gap:5px; padding:9px 10px; box-shadow:0 2px 10px rgba(0,0,0,.15); }
   .mob-hamburger-float span { display:block; width:20px; height:2.5px; background:#fff; border-radius:2px; }
 
   /* ── Drawer ── */
