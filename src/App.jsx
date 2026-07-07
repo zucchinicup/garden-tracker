@@ -241,6 +241,45 @@ const RECUR_SHORT = {"7":"Weekly","14":"Fortnightly","30":"Monthly","60":"2-mont
 const MONTHS      = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DOWS        = ["Su","Mo","Tu","We","Th","Fr","Sa"];
 
+const DAILY_QUOTES = [
+  "Do what you can today. That is enough.",
+  "Small steps still move things forward.",
+  "You do not have to finish everything today.",
+  "Care for what you can. The rest can wait.",
+  "A little tending is still tending.",
+  "Some days are for growing. Some are for resting.",
+  "Enough is a complete sentence.",
+  "The garden does not rush, and neither must you.",
+  "One thing done with care is worthwhile.",
+  "Today’s capacity is enough for today.",
+  "Rest is part of keeping things alive.",
+  "Progress can be quiet and still be real.",
+  "Choose the next kind thing you can do.",
+  "Slow work is still good work.",
+  "What you manage today is worthy of respect.",
+  "Tiny acts of care add up.",
+  "Leave room for ease where you can.",
+  "You are allowed to work with the energy you have.",
+  "Not everything needs your attention at once.",
+  "A gentle pace can still take you somewhere beautiful.",
+  "Begin with what feels possible.",
+  "Done imperfectly can still be deeply useful.",
+  "There is no prize for exhausting yourself.",
+  "Keep what matters. Release what can wait.",
+  "Your best can look different from day to day.",
+  "One small task is a real accomplishment.",
+  "Make space for the life you are actually living.",
+  "You can tend the garden without carrying the whole world.",
+  "A pause can be part of the work.",
+  "Today only asks for today’s effort.",
+  "Grow at the pace your season allows."
+];
+
+function quoteForDate(date = new Date()) {
+  const dayKey = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000;
+  return DAILY_QUOTES[Math.floor(dayKey) % DAILY_QUOTES.length];
+}
+
 // ─── Property constants ────────────────────────────────────────────────────────
 const PROP_AREAS = [
   { id:"house",     label:"House & Garden",emoji:"🏠", color:"#7A5C3A", light:"rgba(122,92,58,.1)"   },
@@ -388,7 +427,7 @@ function AuthScreen({ onAuth }) {
       <div style={{textAlign:"center",marginBottom:32}}>
         <div style={{fontSize:56,marginBottom:12}}>🌿</div>
         <h1 style={{fontSize:28,fontWeight:700,color:"#1E3A1E",marginBottom:8}}>Garden Tracker</h1>
-        <p style={{fontSize:15,color:"#6B8F6B"}}>Your family's property, organised</p>
+        <p style={{fontSize:15,color:"#6B8F6B"}}>Dopamine Farm</p>
       </div>
       <div className="auth-card" style={{width:"100%",maxWidth:380}}>
         <h2 style={{fontSize:18,fontWeight:700,color:"#1E3A1E",marginBottom:6}}>Sign in to continue</h2>
@@ -545,6 +584,7 @@ function HomeScreen({ plants, tasks, dispName, onToggle, onAddTask, onEditTask, 
   const now=new Date();
   const greeting=now.getHours()<12?"Good morning":now.getHours()<17?"Good afternoon":"Good evening";
   const dateStr=now.toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long"});
+  const dailyQuote=quoteForDate(now);
   const orbColor=pct===100?"#3A7D5A":overdue>0?"#B84C4C":"#B07B2A";
   const orbMsg=pct===100?"All done for today! 🌿":overdue>0?`${overdue} overdue — start here`:`${totalNow-doneToday.length} tasks need attention`;
 
@@ -553,6 +593,9 @@ function HomeScreen({ plants, tasks, dispName, onToggle, onAddTask, onEditTask, 
       <div className="hero">
         <div className="hero-date">{dateStr}</div>
         <div className="hero-title">{greeting}, {dispName} 🌱</div>
+        <div style={{marginTop:12,maxWidth:680,padding:"11px 14px",borderLeft:"3px solid rgba(58,125,90,.35)",background:"rgba(255,255,255,.42)",borderRadius:"0 12px 12px 0",fontSize:14,lineHeight:1.5,color:"#5A7A5A",fontStyle:"italic"}}>
+          “{dailyQuote}”
+        </div>
       </div>
       <div className="home-grid">
         {/* LEFT — orb + category list */}
