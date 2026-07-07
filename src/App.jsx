@@ -253,7 +253,6 @@ const PROP_AREAS = [
   { id:"irrigation",label:"Irrigation",    emoji:"🚿", color:"#3A6A8A", light:"rgba(58,106,138,.1)" },
   { id:"general",   label:"General",       emoji:"🔧", color:"#5A5A7A", light:"rgba(90,90,122,.1)"   },
 ];
-const PROP_CHORE_TYPES = ["Mow","Slash","Whipper Snip","Fence Check","Repair","Water Tank","Pump Check","Irrigation","Clean","Inspect","Other"];
 
 // ─── Personal Projects constants ───────────────────────────────────────────────
 const PROJ_MEMBERS = [
@@ -1327,7 +1326,7 @@ function PropertyChoresScreen({ chores, onToggle, onAddChore, onEditChore, onDel
 function AddChoreSheet({ gardenId, onSave, onClose, editChore, onUpdate, onDelete }) {
   const isEdit = !!editChore;
   const [areaId, setAreaId] = useState(isEdit?editChore.areaId:"house");
-  const [type,   setType]   = useState(isEdit?editChore.type:"Mow");
+  const [type,   setType]   = useState(isEdit?editChore.type:"");
   const [due,    setDue]    = useState(isEdit?editChore.dueDate:TODAY);
   const [note,   setNote]   = useState(isEdit?editChore.note:"");
   const [recur,  setRecur]  = useState(isEdit?editChore.recur:"");
@@ -1335,17 +1334,19 @@ function AddChoreSheet({ gardenId, onSave, onClose, editChore, onUpdate, onDelet
   const [err,    setErr]    = useState("");
 
   async function save() {
-    setSaving(true); setErr("");
+    setErr("");
+    if (!type.trim()) { setErr("Please enter a chore"); return; }
+    setSaving(true);
     if (isEdit) {
       const { data, error } = await sb.from("property_chores").update({
-        area_id:areaId, chore_type:type, due_date:due,
+        area_id:areaId, chore_type:type.trim(), due_date:due,
         recurrence_days:recur?Number(recur):null, notes:note,
       }).eq("id",editChore.id).select().single();
       if (error) { setErr(error.message); setSaving(false); return; }
       onUpdate(mapChore(data)); onClose();
     } else {
       const { data, error } = await sb.from("property_chores").insert({
-        garden_id:gardenId, area_id:areaId, chore_type:type, due_date:due,
+        garden_id:gardenId, area_id:areaId, chore_type:type.trim(), due_date:due,
         recurrence_days:recur?Number(recur):null, notes:note,
       }).select().single();
       if (error) { setErr(error.message); setSaving(false); return; }
@@ -1376,10 +1377,8 @@ function AddChoreSheet({ gardenId, onSave, onClose, editChore, onUpdate, onDelet
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
           <div className="field">
-            <label>Chore type</label>
-            <select value={type} onChange={e=>setType(e.target.value)} style={{borderColor:"rgba(122,92,58,.2)"}}>
-              {PROP_CHORE_TYPES.map(t=><option key={t}>{t}</option>)}
-            </select>
+            <label>Chore</label>
+            <input type="text" value={type} onChange={e=>setType(e.target.value)} placeholder="e.g. Mow back paddock…" style={{borderColor:"rgba(122,92,58,.2)"}}/>
           </div>
           <div className="field">
             <label>Due date</label>
@@ -1945,7 +1944,7 @@ export default function App() {
     <div className="shell">
       <style>{CSS}</style>
 
-      <button className="mobile-menu-btn" onClick={()=>setMobileMenuOpen(true)} aria-label="Open navigation menu" aria-expanded={mobileMenuOpen}>☰</button>
+      <button className="mobile-menu-btn" onClick={()=>setMobileMenuOpen(open=>!open)} aria-label={mobileMenuOpen?"Close navigation menu":"Open navigation menu"} aria-expanded={mobileMenuOpen}>☰</button>
       <div className={`mobile-nav-backdrop ${mobileMenuOpen?"open":""}`} onClick={()=>setMobileMenuOpen(false)} aria-hidden="true"/>
 
       {/* ── Sidebar / mobile drawer ── */}
