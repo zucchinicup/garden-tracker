@@ -260,7 +260,7 @@ function TaskPill({ task, plant, onToggle, onEdit, onDelete }) {
   return (
     <div className={`task-pill ${task.done?"done":""} ${cls}`} style={{position:"relative"}}>
       <ChkCircle on={task.done} toggle={()=>onToggle(task.id)} />
-      <div style={{flex:1,minWidth:0}} onClick={()=>setShowActions(s=>!s)} style={{flex:1,minWidth:0,cursor:"pointer"}}>
+      <div onClick={()=>setShowActions(s=>!s)} style={{flex:1,minWidth:0,cursor:"pointer"}}>
         <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap",marginBottom:3}}>
           <span style={{fontSize:16}}>{plant?.emoji}</span>
           <span style={{fontWeight:700,fontSize:14,color:"#1E3A1E"}}>{plant?.name}</span>
@@ -1917,6 +1917,7 @@ export default function App() {
           {screen==="prop-calendar"&& <PropertyCalendarScreen chores={chores} onToggle={toggleChoreDone}/>}
           {screen==="prop-areas"   && <PropertyAreasScreen   chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
         </div>
+      </div>
 
       {modal==="task"  && <AddTaskSheet  plants={plants} defaultPlantId={taskCtx} gardenId={garden.id} onSave={t=>setTasks(ts=>[...ts,t])} onClose={()=>{setModal(null);setEditTask(null);}} editTask={editTask} onUpdate={updateTask} onDelete={deleteTask}/>}
       {modal==="plant" && <AddPlantSheet gardenId={garden.id} onSave={p=>setPlants(ps=>[...ps,p])} onClose={()=>setModal(null)}/>}
@@ -1925,5 +1926,6 @@ export default function App() {
 
       </div>
 
+    </div>
   );
 }
