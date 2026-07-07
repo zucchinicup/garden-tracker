@@ -260,7 +260,7 @@ function TaskPill({ task, plant, onToggle, onEdit, onDelete }) {
   return (
     <div className={`task-pill ${task.done?"done":""} ${cls}`} style={{position:"relative"}}>
       <ChkCircle on={task.done} toggle={()=>onToggle(task.id)} />
-      <div style={{flex:1,minWidth:0}} onClick={()=>setShowActions(s=>!s)} style={{flex:1,minWidth:0,cursor:"pointer"}}>
+      <div onClick={()=>setShowActions(s=>!s)} style={{flex:1,minWidth:0,cursor:"pointer"}}>
         <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap",marginBottom:3}}>
           <span style={{fontSize:16}}>{plant?.emoji}</span>
           <span style={{fontWeight:700,fontSize:14,color:"#1E3A1E"}}>{plant?.name}</span>
@@ -275,8 +275,8 @@ function TaskPill({ task, plant, onToggle, onEdit, onDelete }) {
         </div>
       </div>
       <div style={{display:"flex",gap:4,flexShrink:0}}>
-        <button onClick={()=>onEdit(task)} title="Edit" style={{background:"none",border:"none",cursor:"pointer",fontSize:14,padding:"4px",borderRadius:6,color:"#8FAD8F",transition:"color .15s"}} onMouseEnter={e=>e.target.style.color="#3A7D5A"} onMouseLeave={e=>e.target.style.color="#8FAD8F"}>✏️</button>
-        <button onClick={()=>onDelete(task.id)} title="Delete" style={{background:"none",border:"none",cursor:"pointer",fontSize:14,padding:"4px",borderRadius:6,color:"#8FAD8F",transition:"color .15s"}} onMouseEnter={e=>e.target.style.color="#B84C4C"} onMouseLeave={e=>e.target.style.color="#8FAD8F"}>🗑️</button>
+        {onEdit && <button onClick={()=>onEdit(task)} title="Edit" style={{background:"none",border:"none",cursor:"pointer",fontSize:14,padding:"4px",borderRadius:6,color:"#8FAD8F",transition:"color .15s"}} onMouseEnter={e=>e.currentTarget.style.color="#3A7D5A"} onMouseLeave={e=>e.currentTarget.style.color="#8FAD8F"}>✏️</button>}
+        {onDelete && <button onClick={()=>onDelete(task.id)} title="Delete" style={{background:"none",border:"none",cursor:"pointer",fontSize:14,padding:"4px",borderRadius:6,color:"#8FAD8F",transition:"color .15s"}} onMouseEnter={e=>e.currentTarget.style.color="#B84C4C"} onMouseLeave={e=>e.currentTarget.style.color="#8FAD8F"}>🗑️</button>}
       </div>
     </div>
   );
@@ -964,7 +964,6 @@ function AddTaskSheet({ plants, defaultPlantId, gardenId, onSave, onClose, editT
       </div>
       </div>
     </div>
-  </div>
   );
 }
 
@@ -1009,7 +1008,6 @@ function AddPlantSheet({ gardenId, onSave, onClose }) {
           </button>
       </div>
     </div>
-  </div>
   </div>
   );
 }
@@ -1188,7 +1186,6 @@ function PropertyHomeScreen({ areas, chores, dispName, gardenId, onToggle, onAdd
       </div>
     </div>
   </div>
-  </div>
   );
 }
 
@@ -1319,7 +1316,6 @@ function AddChoreSheet({ gardenId, onSave, onClose, editChore, onUpdate, onDelet
           </button>
       </div>
     </div>
-  </div>
   </div>
   );
 }
@@ -1484,7 +1480,6 @@ function PropertyAreasScreen({ chores, onToggle, onAddChore, onEditChore, onDele
         );
       })}
     </div>
-  </div>
   );
 }
 
@@ -1698,7 +1693,6 @@ function AddProjectSheet({ gardenId, defaultMemberId, onSave, onClose, editTask,
           </button>
       </div>
     </div>
-  </div>
   </div>
   );
 }
