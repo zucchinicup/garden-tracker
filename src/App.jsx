@@ -132,6 +132,92 @@ const CSS = `
   .big-btn-brown { background:#7A5C3A; color:#fff; }
   .big-btn-brown:hover { background:#5E4429; }
   .prop-home-grid { display:grid; grid-template-columns:300px 1fr; gap:32px; align-items:start; }
+
+  /* ── Mobile layout ────────────────────────────────────────────────────────
+     Desktop layout stays unchanged. Mobile uses an off-canvas navigation drawer
+     and deliberately lets dense desktop rows wrap instead of squeezing. ───── */
+  .mobile-menu-btn, .mobile-nav-backdrop { display:none; }
+
+  @media (max-width: 1024px) {
+    html, body, #root { width:100%; min-width:0; overflow-x:hidden; }
+    .shell { display:block; min-height:100dvh; }
+    .screen {
+      margin-left:0; width:100%; min-width:0;
+      padding:76px clamp(12px, 3vw, 24px) 40px;
+      overflow:visible;
+    }
+
+    .mobile-menu-btn {
+      display:flex; position:fixed; top:14px; left:14px; z-index:75;
+      width:44px; height:44px; align-items:center; justify-content:center;
+      border:0; border-radius:12px; background:#1B3A2D; color:#fff;
+      font:700 22px/1 inherit; cursor:pointer;
+      box-shadow:0 4px 16px rgba(18,45,34,.2);
+    }
+    .mobile-nav-backdrop {
+      display:block; position:fixed; inset:0; z-index:59;
+      background:rgba(12,25,18,.48); opacity:0; pointer-events:none;
+      transition:opacity .2s ease;
+    }
+    .mobile-nav-backdrop.open { opacity:1; pointer-events:auto; }
+
+    .sidebar {
+      width:min(84vw, 320px); height:100dvh; top:0; bottom:0; left:0;
+      padding:24px 0 calc(20px + env(safe-area-inset-bottom));
+      transform:translateX(-105%); transition:transform .22s ease;
+      overflow-y:auto; overflow-x:hidden;
+      box-shadow:10px 0 30px rgba(18,45,34,.22);
+    }
+    .sidebar.mobile-open { transform:translateX(0); }
+    .sidebar-logo { display:block; }
+    .nav-btn { min-height:44px; }
+
+    .home-grid, .prop-home-grid, .two-col, .three-col {
+      grid-template-columns:minmax(0,1fr) !important; gap:16px;
+    }
+    .home-grid > *, .prop-home-grid > *, .two-col > *, .three-col > * { min-width:0; }
+    .screen > *, .fade-up, .fade-up > *, main { min-width:0; max-width:100%; }
+    .task-pill, .prop-pill, .proj-pill, .plant-row { width:100%; max-width:100%; }
+    .task-pill > div:nth-child(2), .prop-pill > div:nth-child(2), .proj-pill > div:nth-child(2), .plant-row > div:nth-child(2) { flex:1 1 220px !important; }
+    .hero { padding-bottom:18px; }
+    .hero-title { font-size:24px; overflow-wrap:anywhere; }
+
+    /* Dense desktop rows become readable stacked/wrapped mobile cards. */
+    .task-pill, .prop-pill, .proj-pill, .plant-row {
+      min-width:0; padding:12px; gap:10px; flex-wrap:wrap;
+    }
+    .task-pill > div, .prop-pill > div, .proj-pill > div, .plant-row > div { min-width:0; }
+    .task-pill > div[style*="flex-shrink"], .prop-pill > div[style*="flex-shrink"] {
+      margin-left:auto;
+    }
+    .px { min-width:0; }
+    .px > div { min-width:0; }
+    button, input, select, textarea { max-width:100%; }
+
+    .cal-header, .cal-grid { padding-left:0; padding-right:0; }
+    .cal-grid { gap:3px; }
+    .cal-cell { min-width:0; min-height:50px; padding:5px 3px; border-radius:9px; }
+    .cal-num { font-size:11px; }
+
+    .overlay { align-items:flex-end; background:rgba(20,35,26,.42); }
+    .sheet {
+      width:100%; max-width:none; min-height:0; max-height:92dvh;
+      overflow-y:auto; padding:28px 16px calc(28px + env(safe-area-inset-bottom));
+      border-radius:22px 22px 0 0;
+    }
+    .sheet-handle { display:block; width:42px; height:5px; border-radius:99px; background:#D7DDD7; margin:0 auto 18px; }
+    .sheet-close { position:absolute; top:12px; right:12px; }
+    .auth-card { margin:18px 0; padding:28px 20px; }
+    .field input, .field select, .field textarea { font-size:16px; }
+    .big-btn { min-height:48px; }
+    .sm-btn { min-height:40px; }
+  }
+
+  @media (max-width: 420px) {
+    .screen { padding-left:10px; padding-right:10px; }
+    .hero-title { font-size:22px; }
+    .cal-cell { min-height:46px; }
+  }
 `;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -1710,6 +1796,7 @@ export default function App() {
   const [projects,  setProjects]  = useState([]);
   const [loading,   setLoading]   = useState(false);
   const [screen,    setScreen]    = useState("home");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [modal,     setModal]     = useState(null);
   const [taskCtx,   setTaskCtx]   = useState(null);
   const [editTask,  setEditTask]  = useState(null);
@@ -1847,90 +1934,3 @@ export default function App() {
 
   const isPropScreen = screen.startsWith("prop-");
 
-  if (!authReady) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh"}}><Spinner size={36}/></div>;
-  if (!authUser)  return <><style>{CSS}</style><AuthScreen onAuth={setAuthUser}/></>;
-  if (loading)    return <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh"}}><Spinner size={36}/></div>;
-  if (!garden)    return <><style>{CSS}</style><GardenSetup user={authUser} onJoined={(g,dn)=>{setGarden(g);setDispName(dn);loadGarden();}}/></>;
-
-  return (
-    <div className="shell">
-      <style>{CSS}</style>
-
-      {/* ── Sidebar ── */}
-      <nav className="sidebar">
-        <div className="sidebar-logo">
-          <div style={{fontSize:28,marginBottom:6}}>🌿</div>
-          <div style={{fontSize:16,fontWeight:700,color:"#fff",lineHeight:1}}>Dopamine Farm</div>
-          <div style={{fontSize:11,color:"#7DBE9A",marginTop:3}}>{dispName}</div>
-        </div>
-
-        {/* Garden section */}
-        <div style={{padding:"6px 20px 4px",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.35)",letterSpacing:".1em",textTransform:"uppercase"}}>🌿 Garden</div>
-        {GARDEN_NAV.map(n=>(
-          <button key={n.id} className={`nav-btn ${screen===n.id?"active":""}`} onClick={()=>setScreen(n.id)}>
-            <span className="nav-icon">{n.icon}</span>
-            <span className="nav-label">
-              {n.label}
-              {n.id==="upcoming"&&overdueGarden>0&&<span style={{marginLeft:6,fontSize:10,background:"#B84C4C",color:"#fff",padding:"1px 6px",borderRadius:20,fontWeight:700}}>{overdueGarden}</span>}
-            </span>
-          </button>
-        ))}
-
-        {/* Property section */}
-        <hr style={{margin:"14px 20px",border:"none",borderTop:"1px solid rgba(255,255,255,.1)"}}/>
-        <div style={{padding:"2px 20px 4px",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.35)",letterSpacing:".1em",textTransform:"uppercase"}}>🏡 Property</div>
-        {PROP_NAV.map(n=>(
-          <button key={n.id} className={`nav-btn ${screen===n.id?"prop-active":""}`} onClick={()=>setScreen(n.id)}>
-            <span className="nav-icon">{n.icon}</span>
-            <span className="nav-label" style={{color:screen===n.id?"#D4A574":"#C4A882"}}>
-              {n.label}
-              {n.id==="prop-tasks"&&overdueProperty>0&&<span style={{marginLeft:6,fontSize:10,background:"#B84C4C",color:"#fff",padding:"1px 6px",borderRadius:20,fontWeight:700}}>{overdueProperty}</span>}
-            </span>
-          </button>
-        ))}
-
-        {/* Personal Projects section */}
-        <hr style={{margin:"14px 20px",border:"none",borderTop:"1px solid rgba(255,255,255,.1)"}}/>
-        <div style={{padding:"2px 20px 4px",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.35)",letterSpacing:".1em",textTransform:"uppercase"}}>✨ Personal</div>
-        <button className={`nav-btn ${screen==="projects"?"active":""}`} onClick={()=>setScreen("projects")}>
-          <span className="nav-icon">✨</span>
-          <span className="nav-label" style={{color:screen==="projects"?"#D4A8C8":"#C4A0B8"}}>Personal Projects</span>
-        </button>
-
-        {/* Settings & sign out */}
-        <hr style={{margin:"14px 20px",border:"none",borderTop:"1px solid rgba(255,255,255,.1)"}}/>
-        <div style={{padding:"2px 20px 4px",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.35)",letterSpacing:".1em",textTransform:"uppercase"}}>⚙️ Account</div>
-        <button className={`nav-btn ${screen==="settings"?"active":""}`} onClick={()=>setScreen("settings")}>
-          <span className="nav-icon">⚙️</span>
-          <span className="nav-label">Settings</span>
-        </button>
-        <div style={{marginTop:"auto",padding:"16px 20px 0",borderTop:"1px solid rgba(255,255,255,.1)"}}>
-          <button onClick={signOut} style={{background:"rgba(255,255,255,.08)",border:"none",borderRadius:8,padding:"8px 12px",color:"#9DC4AF",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",width:"100%",textAlign:"left"}}>
-            Sign out
-          </button>
-        </div>
-      </nav>
-
-      {/* ── Main content ── */}
-      <div className="screen" style={isPropScreen?{background:"linear-gradient(160deg,#EDE5D8 0%,#F5EDE0 50%,#EAE0CE 100%)"}:{}}>
-          {screen==="home"       && <HomeScreen         plants={plants} tasks={tasks} dispName={dispName} onToggle={toggleDone} onAddTask={openAddTask} onEditTask={openEditTask} onDeleteTask={deleteTask}/>}
-          {screen==="upcoming"   && <UpcomingScreen     plants={plants} tasks={tasks} onToggle={toggleDone} onEditTask={openEditTask} onDeleteTask={deleteTask}/>}
-          {screen==="calendar"   && <CalendarScreen     plants={plants} tasks={tasks} onToggle={toggleDone}/>}
-          {screen==="plants"     && <PlantsScreen       plants={plants} tasks={tasks} onAddPlant={()=>setModal("plant")} onAddTask={openAddTask} onEditTask={openEditTask} onDeleteTask={deleteTask}/>}
-          {screen==="settings"   && <SettingsScreen     user={authUser} garden={garden} members={members} dispName={dispName} onSignOut={signOut}/>}
-          {screen==="projects"   && <PersonalProjectsScreen projects={projects} gardenId={garden.id} onToggle={toggleProjectDone} onAdd={openAddProject} onEdit={openEditProject} onDelete={deleteProject}/>}
-          {screen==="prop-home"    && <PropertyHomeScreen    chores={chores} dispName={dispName} gardenId={garden.id} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
-          {screen==="prop-tasks"   && <PropertyChoresScreen  chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
-          {screen==="prop-calendar"&& <PropertyCalendarScreen chores={chores} onToggle={toggleChoreDone}/>}
-          {screen==="prop-areas"   && <PropertyAreasScreen   chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
-        </div>
-
-      {modal==="task"  && <AddTaskSheet  plants={plants} defaultPlantId={taskCtx} gardenId={garden.id} onSave={t=>setTasks(ts=>[...ts,t])} onClose={()=>{setModal(null);setEditTask(null);}} editTask={editTask} onUpdate={updateTask} onDelete={deleteTask}/>}
-      {modal==="plant" && <AddPlantSheet gardenId={garden.id} onSave={p=>setPlants(ps=>[...ps,p])} onClose={()=>setModal(null)}/>}
-      {modal==="chore"   && <AddChoreSheet gardenId={garden.id} onSave={c=>setChores(cs=>[...cs,c])} onClose={()=>{setModal(null);setEditChore(null);}} editChore={editChore} onUpdate={updateChore} onDelete={deleteChore}/>}
-      {modal==="project" && <AddProjectSheet gardenId={garden.id} defaultMemberId={projMemberCtx} onSave={p=>setProjects(ps=>[...ps,p])} onClose={()=>{setModal(null);setEditProject(null);}} editTask={editProject} onUpdate={updateProject} onDelete={deleteProject}/>}
-
-
-    </div>
-  );
-}
