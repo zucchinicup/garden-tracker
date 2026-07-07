@@ -1934,3 +1934,93 @@ export default function App() {
 
   const isPropScreen = screen.startsWith("prop-");
 
+  if (!authReady) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh"}}><Spinner size={36}/></div>;
+  if (!authUser)  return <><style>{CSS}</style><AuthScreen onAuth={setAuthUser}/></>;
+  if (loading)    return <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh"}}><Spinner size={36}/></div>;
+  if (!garden)    return <><style>{CSS}</style><GardenSetup user={authUser} onJoined={(g,dn)=>{setGarden(g);setDispName(dn);loadGarden();}}/></>;
+
+  return (
+    <div className="shell">
+      <style>{CSS}</style>
+
+      <button className="mobile-menu-btn" onClick={()=>setMobileMenuOpen(true)} aria-label="Open navigation menu" aria-expanded={mobileMenuOpen}>☰</button>
+      <div className={`mobile-nav-backdrop ${mobileMenuOpen?"open":""}`} onClick={()=>setMobileMenuOpen(false)} aria-hidden="true"/>
+
+      {/* ── Sidebar / mobile drawer ── */}
+      <nav className={`sidebar ${mobileMenuOpen?"mobile-open":""}`}>
+        <div className="sidebar-logo">
+          <div style={{fontSize:28,marginBottom:6}}>🌿</div>
+          <div style={{fontSize:16,fontWeight:700,color:"#fff",lineHeight:1}}>Dopamine Farm</div>
+          <div style={{fontSize:11,color:"#7DBE9A",marginTop:3}}>{dispName}</div>
+        </div>
+
+        {/* Garden section */}
+        <div style={{padding:"6px 20px 4px",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.35)",letterSpacing:".1em",textTransform:"uppercase"}}>🌿 Garden</div>
+        {GARDEN_NAV.map(n=>(
+          <button key={n.id} className={`nav-btn ${screen===n.id?"active":""}`} onClick={()=>{setScreen(n.id);setMobileMenuOpen(false);}}>
+            <span className="nav-icon">{n.icon}</span>
+            <span className="nav-label">
+              {n.label}
+              {n.id==="upcoming"&&overdueGarden>0&&<span style={{marginLeft:6,fontSize:10,background:"#B84C4C",color:"#fff",padding:"1px 6px",borderRadius:20,fontWeight:700}}>{overdueGarden}</span>}
+            </span>
+          </button>
+        ))}
+
+        {/* Property section */}
+        <hr style={{margin:"14px 20px",border:"none",borderTop:"1px solid rgba(255,255,255,.1)"}}/>
+        <div style={{padding:"2px 20px 4px",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.35)",letterSpacing:".1em",textTransform:"uppercase"}}>🏡 Property</div>
+        {PROP_NAV.map(n=>(
+          <button key={n.id} className={`nav-btn ${screen===n.id?"prop-active":""}`} onClick={()=>{setScreen(n.id);setMobileMenuOpen(false);}}>
+            <span className="nav-icon">{n.icon}</span>
+            <span className="nav-label" style={{color:screen===n.id?"#D4A574":"#C4A882"}}>
+              {n.label}
+              {n.id==="prop-tasks"&&overdueProperty>0&&<span style={{marginLeft:6,fontSize:10,background:"#B84C4C",color:"#fff",padding:"1px 6px",borderRadius:20,fontWeight:700}}>{overdueProperty}</span>}
+            </span>
+          </button>
+        ))}
+
+        {/* Personal Projects section */}
+        <hr style={{margin:"14px 20px",border:"none",borderTop:"1px solid rgba(255,255,255,.1)"}}/>
+        <div style={{padding:"2px 20px 4px",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.35)",letterSpacing:".1em",textTransform:"uppercase"}}>✨ Personal</div>
+        <button className={`nav-btn ${screen==="projects"?"active":""}`} onClick={()=>{setScreen("projects");setMobileMenuOpen(false);}}>
+          <span className="nav-icon">✨</span>
+          <span className="nav-label" style={{color:screen==="projects"?"#D4A8C8":"#C4A0B8"}}>Personal Projects</span>
+        </button>
+
+        {/* Settings & sign out */}
+        <hr style={{margin:"14px 20px",border:"none",borderTop:"1px solid rgba(255,255,255,.1)"}}/>
+        <div style={{padding:"2px 20px 4px",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.35)",letterSpacing:".1em",textTransform:"uppercase"}}>⚙️ Account</div>
+        <button className={`nav-btn ${screen==="settings"?"active":""}`} onClick={()=>{setScreen("settings");setMobileMenuOpen(false);}}>
+          <span className="nav-icon">⚙️</span>
+          <span className="nav-label">Settings</span>
+        </button>
+        <div style={{marginTop:"auto",padding:"16px 20px 0",borderTop:"1px solid rgba(255,255,255,.1)"}}>
+          <button onClick={signOut} style={{background:"rgba(255,255,255,.08)",border:"none",borderRadius:8,padding:"8px 12px",color:"#9DC4AF",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",width:"100%",textAlign:"left"}}>
+            Sign out
+          </button>
+        </div>
+      </nav>
+
+      {/* ── Main content ── */}
+      <div className="screen" style={isPropScreen?{background:"linear-gradient(160deg,#EDE5D8 0%,#F5EDE0 50%,#EAE0CE 100%)"}:{}}>
+          {screen==="home"       && <HomeScreen         plants={plants} tasks={tasks} dispName={dispName} onToggle={toggleDone} onAddTask={openAddTask} onEditTask={openEditTask} onDeleteTask={deleteTask}/>}
+          {screen==="upcoming"   && <UpcomingScreen     plants={plants} tasks={tasks} onToggle={toggleDone} onEditTask={openEditTask} onDeleteTask={deleteTask}/>}
+          {screen==="calendar"   && <CalendarScreen     plants={plants} tasks={tasks} onToggle={toggleDone}/>}
+          {screen==="plants"     && <PlantsScreen       plants={plants} tasks={tasks} onAddPlant={()=>setModal("plant")} onAddTask={openAddTask} onEditTask={openEditTask} onDeleteTask={deleteTask}/>}
+          {screen==="settings"   && <SettingsScreen     user={authUser} garden={garden} members={members} dispName={dispName} onSignOut={signOut}/>}
+          {screen==="projects"   && <PersonalProjectsScreen projects={projects} gardenId={garden.id} onToggle={toggleProjectDone} onAdd={openAddProject} onEdit={openEditProject} onDelete={deleteProject}/>}
+          {screen==="prop-home"    && <PropertyHomeScreen    chores={chores} dispName={dispName} gardenId={garden.id} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
+          {screen==="prop-tasks"   && <PropertyChoresScreen  chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
+          {screen==="prop-calendar"&& <PropertyCalendarScreen chores={chores} onToggle={toggleChoreDone}/>}
+          {screen==="prop-areas"   && <PropertyAreasScreen   chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
+        </div>
+
+      {modal==="task"  && <AddTaskSheet  plants={plants} defaultPlantId={taskCtx} gardenId={garden.id} onSave={t=>setTasks(ts=>[...ts,t])} onClose={()=>{setModal(null);setEditTask(null);}} editTask={editTask} onUpdate={updateTask} onDelete={deleteTask}/>}
+      {modal==="plant" && <AddPlantSheet gardenId={garden.id} onSave={p=>setPlants(ps=>[...ps,p])} onClose={()=>setModal(null)}/>}
+      {modal==="chore"   && <AddChoreSheet gardenId={garden.id} onSave={c=>setChores(cs=>[...cs,c])} onClose={()=>{setModal(null);setEditChore(null);}} editChore={editChore} onUpdate={updateChore} onDelete={deleteChore}/>}
+      {modal==="project" && <AddProjectSheet gardenId={garden.id} defaultMemberId={projMemberCtx} onSave={p=>setProjects(ps=>[...ps,p])} onClose={()=>{setModal(null);setEditProject(null);}} editTask={editProject} onUpdate={updateProject} onDelete={deleteProject}/>}
+
+
+    </div>
+  );
+}
