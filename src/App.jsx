@@ -547,7 +547,6 @@ function HomeScreen({ plants, tasks, dispName, onToggle, onAddTask, onEditTask, 
       </div>
     </div>
     </div>
-  </div>
   );
 }
 
