@@ -1917,7 +1917,6 @@ export default function App() {
           {screen==="prop-calendar"&& <PropertyCalendarScreen chores={chores} onToggle={toggleChoreDone}/>}
           {screen==="prop-areas"   && <PropertyAreasScreen   chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
         </div>
-      </div>
 
       {modal==="task"  && <AddTaskSheet  plants={plants} defaultPlantId={taskCtx} gardenId={garden.id} onSave={t=>setTasks(ts=>[...ts,t])} onClose={()=>{setModal(null);setEditTask(null);}} editTask={editTask} onUpdate={updateTask} onDelete={deleteTask}/>}
       {modal==="plant" && <AddPlantSheet gardenId={garden.id} onSave={p=>setPlants(ps=>[...ps,p])} onClose={()=>setModal(null)}/>}
@@ -1926,6 +1925,5 @@ export default function App() {
 
       </div>
 
-    </div>
   );
 }
