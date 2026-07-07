@@ -260,7 +260,7 @@ function TaskPill({ task, plant, onToggle, onEdit, onDelete }) {
   return (
     <div className={`task-pill ${task.done?"done":""} ${cls}`} style={{position:"relative"}}>
       <ChkCircle on={task.done} toggle={()=>onToggle(task.id)} />
-      <div onClick={()=>setShowActions(s=>!s)} style={{flex:1,minWidth:0,cursor:"pointer"}}>
+      <div style={{flex:1,minWidth:0}} onClick={()=>setShowActions(s=>!s)} style={{flex:1,minWidth:0,cursor:"pointer"}}>
         <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap",marginBottom:3}}>
           <span style={{fontSize:16}}>{plant?.emoji}</span>
           <span style={{fontWeight:700,fontSize:14,color:"#1E3A1E"}}>{plant?.name}</span>
@@ -413,6 +413,7 @@ function GardenSetup({ user, onJoined }) {
               </button>
             </div>
           </>)}
+        </div>
       </div>
     </div>
   );
