@@ -547,6 +547,7 @@ function HomeScreen({ plants, tasks, dispName, onToggle, onAddTask, onEditTask, 
       </div>
     </div>
     </div>
+  </div>
   );
 }
 
@@ -962,7 +963,9 @@ function AddTaskSheet({ plants, defaultPlantId, gardenId, onSave, onClose, editT
             {saving?<Spinner/>:isEdit?"Save changes":"Save task"}
           </button>
       </div>
+      </div>
     </div>
+  </div>
   );
 }
 
@@ -1007,6 +1010,8 @@ function AddPlantSheet({ gardenId, onSave, onClose }) {
           </button>
       </div>
     </div>
+  </div>
+  </div>
   );
 }
 
@@ -1183,6 +1188,8 @@ function PropertyHomeScreen({ areas, chores, dispName, gardenId, onToggle, onAdd
           </>)}
       </div>
     </div>
+  </div>
+  </div>
   );
 }
 
@@ -1313,6 +1320,8 @@ function AddChoreSheet({ gardenId, onSave, onClose, editChore, onUpdate, onDelet
           </button>
       </div>
     </div>
+  </div>
+  </div>
   );
 }
 
@@ -1476,6 +1485,7 @@ function PropertyAreasScreen({ chores, onToggle, onAddChore, onEditChore, onDele
         );
       })}
     </div>
+  </div>
   );
 }
 
@@ -1689,6 +1699,8 @@ function AddProjectSheet({ gardenId, defaultMemberId, onSave, onClose, editTask,
           </button>
       </div>
     </div>
+  </div>
+  </div>
   );
 }
 
@@ -1919,14 +1931,12 @@ export default function App() {
           {screen==="prop-calendar"&& <PropertyCalendarScreen chores={chores} onToggle={toggleChoreDone}/>}
           {screen==="prop-areas"   && <PropertyAreasScreen   chores={chores} onToggle={toggleChoreDone} onAddChore={()=>setModal("chore")} onEditChore={openEditChore} onDeleteChore={deleteChore}/>}
         </div>
-      </div>
 
       {modal==="task"  && <AddTaskSheet  plants={plants} defaultPlantId={taskCtx} gardenId={garden.id} onSave={t=>setTasks(ts=>[...ts,t])} onClose={()=>{setModal(null);setEditTask(null);}} editTask={editTask} onUpdate={updateTask} onDelete={deleteTask}/>}
       {modal==="plant" && <AddPlantSheet gardenId={garden.id} onSave={p=>setPlants(ps=>[...ps,p])} onClose={()=>setModal(null)}/>}
       {modal==="chore"   && <AddChoreSheet gardenId={garden.id} onSave={c=>setChores(cs=>[...cs,c])} onClose={()=>{setModal(null);setEditChore(null);}} editChore={editChore} onUpdate={updateChore} onDelete={deleteChore}/>}
       {modal==="project" && <AddProjectSheet gardenId={garden.id} defaultMemberId={projMemberCtx} onSave={p=>setProjects(ps=>[...ps,p])} onClose={()=>{setModal(null);setEditProject(null);}} editTask={editProject} onUpdate={updateProject} onDelete={deleteProject}/>}
 
-      </div>
 
     </div>
   );
