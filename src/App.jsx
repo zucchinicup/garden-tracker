@@ -164,11 +164,13 @@ const CSS = `
     .sidebar {
       width:min(84vw, 320px); height:100dvh; top:0; bottom:0; left:0;
       padding:24px 0 calc(20px + env(safe-area-inset-bottom));
-      transform:translateX(-105%); transition:transform .22s ease;
+      z-index:70; transform:translateX(-105%); transition:transform .22s ease;
       overflow-y:auto; overflow-x:hidden;
+      -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
       box-shadow:10px 0 30px rgba(18,45,34,.22);
     }
     .sidebar.mobile-open { transform:translateX(0); }
+    .sidebar.mobile-open, .sidebar.mobile-open * { pointer-events:auto; }
     .sidebar-logo { display:block; }
     .nav-btn { min-height:44px; }
 
